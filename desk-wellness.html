@@ -528,17 +528,6 @@
     letter-spacing: 0.1em; color: var(--muted);
   }
 
-  /* ===== IDLE BANNER ===== */
-  .idle-banner {
-    display: none; align-items: center; gap: 12px;
-    padding: 10px 16px;
-    background: color-mix(in srgb, var(--muted) 8%, var(--surface));
-    border: 1px solid var(--border); border-radius: 10px;
-    margin-bottom: 20px; font-size: 0.72rem;
-  }
-  .idle-banner.active { display: flex; }
-  .idle-banner-label { color: var(--muted); }
-
   /* ===== SOUND BADGE ===== */
   .sound-toggle {
     font-size: 0.65rem; padding: 4px 8px; cursor: pointer;
@@ -601,12 +590,6 @@
   </div>
 
   <!-- IDLE BANNER -->
-  <div class="idle-banner" id="idleBanner">
-    <span>😴</span>
-    <span class="idle-banner-label">Away detected — timers paused</span>
-    <button class="btn" onclick="resumeFromIdle()" style="--card-accent: var(--accent-stand); margin-left: auto;">Resume</button>
-  </div>
-
   <!-- FOCUS BANNER -->
   <div class="focus-banner" id="focusBanner">
     <span style="font-size: 1.2rem;">🎯</span>
@@ -1165,8 +1148,6 @@ let focusInterval = null;
 let soundMuted = false;
 let soundVolume = 0.6;
 let deskStartTime = Date.now();
-let idlePaused = false;
-let idleTimeout = null;
 
 function loadState() {
   try {
@@ -2017,47 +1998,6 @@ function updateDeskTime() {
 }
 setInterval(updateDeskTime, 60000);
 updateDeskTime();
-
-// ===== IDLE / AWAY DETECTION =====
-const IDLE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
-let lastActivity = Date.now();
-let idleCheckInterval = null;
-
-function resetActivity() {
-  lastActivity = Date.now();
-  if (idlePaused) resumeFromIdle();
-}
-
-function resumeFromIdle() {
-  if (!idlePaused) return;
-  idlePaused = false;
-  document.getElementById('idleBanner').classList.remove('active');
-  // Re-start all timers that were running before idle
-  const wasRunning = JSON.parse(sessionStorage.getItem('idlePausedTimers') || '[]');
-  wasRunning.forEach(key => {
-    if (key === '__SS__') { if (!SS.running) toggleSitstand(); }
-    else if (timers[key] && !timers[key].running) toggleTimer(key);
-  });
-  sessionStorage.removeItem('idlePausedTimers');
-}
-
-['mousemove','keydown','mousedown','touchstart','scroll'].forEach(ev => {
-  document.addEventListener(ev, resetActivity, { passive: true });
-});
-
-idleCheckInterval = setInterval(() => {
-  if (Date.now() - lastActivity > IDLE_THRESHOLD && !idlePaused) {
-    // Detect idle: pause everything that is running
-    const paused = [];
-    if (SS.running) { toggleSitstand(); paused.push('__SS__'); }
-    MASTER_KEYS.forEach(k => { if (timers[k].running) { toggleTimer(k); paused.push(k); } });
-    if (paused.length > 0) {
-      idlePaused = true;
-      sessionStorage.setItem('idlePausedTimers', JSON.stringify(paused));
-      document.getElementById('idleBanner').classList.add('active');
-    }
-  }
-}, 30000); // check every 30s
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', e => {
