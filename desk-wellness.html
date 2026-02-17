@@ -704,6 +704,25 @@
       <div class="card-title">Wrist Stretches</div>
       <div class="card-desc">Quick guided stretch for IT hands. Takes ~90 seconds.</div>
 
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="wristRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="wristRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="wristCountdown">60:00</div>
+          <div class="timer-label" id="wristTimerStatus">Routine reminder</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button class="btn primary" id="wristTimerBtn" onclick="toggleTimer('wrist')">Start reminder</button>
+        <button class="btn" onclick="resetTimer('wrist')">Reset</button>
+      </div>
+
       <ul class="steps" id="wristSteps">
         <li class="current"><span class="step-num">01</span>Extend arm, pull fingers back gently — 15 sec</li>
         <li><span class="step-num">02</span>Flip hand down, press back — 15 sec</li>
@@ -726,6 +745,25 @@
       <div class="card-label">Neck & Upper Back</div>
       <div class="card-title">Neck Stretches</div>
       <div class="card-desc">Releases forward head posture. Do every 60–90 min at desk.</div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="neckRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="neckRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="neckCountdown">60:00</div>
+          <div class="timer-label" id="neckTimerStatus">Routine reminder</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button class="btn primary" id="neckTimerBtn" onclick="toggleTimer('neck')">Start reminder</button>
+        <button class="btn" onclick="resetTimer('neck')">Reset</button>
+      </div>
 
       <ul class="steps" id="neckSteps">
         <li class="current"><span class="step-num">01</span>Ear to shoulder, left side — 15 sec</li>
@@ -846,6 +884,25 @@
       <div class="card-label">Nervous System</div>
       <div class="card-title">Physiological Sigh</div>
       <div class="card-desc">Double inhale through nose, long slow exhale. 1-3 rounds. Fastest stress reset.</div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="breathRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="breathRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="breathCountdown">90:00</div>
+          <div class="timer-label" id="breathTimerStatus">Routine reminder</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button class="btn primary" id="breathTimerBtn" onclick="toggleTimer('breath')">Start reminder</button>
+        <button class="btn" onclick="resetTimer('breath')">Reset</button>
+      </div>
 
       <div class="breath-visual">
         <div class="breath-circle" id="breathCircle">Ready</div>
@@ -1007,6 +1064,31 @@
     </div>
 
     <div class="setting-group">
+      <div class="setting-group-title">Routine Reminders</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Wrist stretches</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setWrist" value="60" min="30" max="120">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Neck stretches</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setNeck" value="60" min="30" max="120">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Breathing exercise</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setBreath" value="90" min="30" max="180">
+      </div>
+    </div>
+
+    <div class="setting-group">
       <div class="setting-group-title">Hydration Goal</div>
       <div class="setting-row">
         <div>
@@ -1078,6 +1160,7 @@ const DEFAULTS = {
   sitDuration: 25, standDuration: 20,
   eyesDuration: 20, shoulderDuration: 45,
   walkDuration: 90, hydrationDuration: 30,
+  wristDuration: 60, neckDuration: 60, breathDuration: 90,
   waterGoal: 8,
   soundMuted: false, soundVolume: 60
 };
@@ -1095,6 +1178,9 @@ function openSettings() {
   document.getElementById('setShoulder').value = cfg.shoulderDuration;
   document.getElementById('setWalk').value = cfg.walkDuration;
   document.getElementById('setHydration').value = cfg.hydrationDuration;
+  document.getElementById('setWrist').value = cfg.wristDuration;
+  document.getElementById('setNeck').value = cfg.neckDuration;
+  document.getElementById('setBreath').value = cfg.breathDuration;
   document.getElementById('setWaterGoal').value = cfg.waterGoal;
   document.getElementById('setSoundVolume').value = cfg.soundMuted ? 0 : cfg.soundVolume;
   const stBtn = document.getElementById('setSoundToggle');
@@ -1119,6 +1205,9 @@ function resetSettings() {
   document.getElementById('setShoulder').value = cfg.shoulderDuration;
   document.getElementById('setWalk').value = cfg.walkDuration;
   document.getElementById('setHydration').value = cfg.hydrationDuration;
+  document.getElementById('setWrist').value = cfg.wristDuration;
+  document.getElementById('setNeck').value = cfg.neckDuration;
+  document.getElementById('setBreath').value = cfg.breathDuration;
   document.getElementById('setWaterGoal').value = cfg.waterGoal;
 }
 
@@ -1132,6 +1221,9 @@ function applySettings() {
     shoulderDuration:  Math.max(10, Math.min(120, parseInt(document.getElementById('setShoulder').value) || 45)),
     walkDuration:      Math.max(30, Math.min(240, parseInt(document.getElementById('setWalk').value) || 90)),
     hydrationDuration: Math.max(15, Math.min(90,  parseInt(document.getElementById('setHydration').value) || 30)),
+    wristDuration:     Math.max(30, Math.min(120, parseInt(document.getElementById('setWrist').value) || 60)),
+    neckDuration:      Math.max(30, Math.min(120, parseInt(document.getElementById('setNeck').value) || 60)),
+    breathDuration:    Math.max(30, Math.min(180, parseInt(document.getElementById('setBreath').value) || 90)),
     waterGoal:         Math.max(4,  Math.min(16,  parseInt(document.getElementById('setWaterGoal').value) || 8)),
     soundMuted: newMuted,
     soundVolume: newVolume,
@@ -1146,6 +1238,9 @@ function applySettings() {
   timers.shoulder.duration = cfg.shoulderDuration * 60;
   timers.walk.duration = cfg.walkDuration * 60;
   timers.hydration.duration = cfg.hydrationDuration * 60;
+  timers.wrist.duration = cfg.wristDuration * 60;
+  timers.neck.duration = cfg.neckDuration * 60;
+  timers.breath.duration = cfg.breathDuration * 60;
   SS.durations.sit = cfg.sitDuration * 60;
   SS.durations.stand = cfg.standDuration * 60;
 
@@ -1158,7 +1253,7 @@ function applySettings() {
   renderWaterGlasses();
 
   // Reset timers that aren't running to reflect new durations
-  ['eyes', 'shoulder', 'walk', 'hydration'].forEach(k => {
+  ['eyes', 'shoulder', 'walk', 'hydration', 'wrist', 'neck', 'breath'].forEach(k => {
     const t = timers[k];
     if (!t.running) {
       t.remaining = t.duration;
@@ -1322,7 +1417,26 @@ const timers = {
   hydration:  { duration: 30*60, remaining: 30*60, interval: null, running: false,
                 ringId: 'hydrationRing', ringTextId: 'hydrationRingText',
                 countdownId: 'hydrationCountdown', statusId: 'hydrationStatus', btnId: 'hydrationStartBtn',
-                alertTitle: '💧 Drink Water!', alertBody: "Stay hydrated — your brain is 75% water." },
+                alertTitle: '💧 Drink Water!', alertBody: "Stay hydrated — your brain is 75% water.",
+                isReminder: true, defaultStatus: 'Drink reminder' },
+  wrist:      { duration: 60*60, remaining: 60*60, interval: null, running: false,
+                ringId: 'wristRing', ringTextId: 'wristRingText',
+                countdownId: 'wristCountdown', statusId: 'wristTimerStatus', btnId: 'wristTimerBtn',
+                alertTitle: '🤲 Wrist Stretch Time!', alertBody: 'Quick 90-second routine for your wrists and hands.',
+                isReminder: true, defaultStatus: 'Routine reminder',
+                onComplete() { startWristRoutine(); } },
+  neck:       { duration: 60*60, remaining: 60*60, interval: null, running: false,
+                ringId: 'neckRing', ringTextId: 'neckRingText',
+                countdownId: 'neckCountdown', statusId: 'neckTimerStatus', btnId: 'neckTimerBtn',
+                alertTitle: '🧘 Neck Stretch Time!', alertBody: 'Relieve forward head posture. Takes ~90 seconds.',
+                isReminder: true, defaultStatus: 'Routine reminder',
+                onComplete() { startNeckRoutine(); } },
+  breath:     { duration: 90*60, remaining: 90*60, interval: null, running: false,
+                ringId: 'breathRing', ringTextId: 'breathRingText',
+                countdownId: 'breathCountdown', statusId: 'breathTimerStatus', btnId: 'breathTimerBtn',
+                alertTitle: '🫁 Breathing Break', alertBody: 'Take 3 physiological sighs to reset stress now.',
+                isReminder: true, defaultStatus: 'Routine reminder',
+                onComplete() { startBreath(); } },
 };
 
 function fmt(s) {
@@ -1340,7 +1454,7 @@ function updateRing(t, remaining, duration) {
 }
 
 // ===== MASTER START / PAUSE =====
-const MASTER_KEYS = ['eyes', 'shoulder', 'walk', 'hydration'];
+const MASTER_KEYS = ['eyes', 'shoulder', 'walk', 'hydration', 'wrist', 'neck', 'breath'];
 
 function allRunning() {
   return SS.running && MASTER_KEYS.every(k => timers[k].running);
@@ -1376,7 +1490,7 @@ function toggleTimer(key) {
   if (t.running) {
     clearInterval(t.interval); t.running = false;
     clearPreBreakWarning(key);
-    document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Resume reminder' : 'Resume';
+    document.getElementById(t.btnId).textContent = t.isReminder ? 'Resume reminder' : 'Resume';
     document.getElementById(t.statusId).textContent = 'Paused';
   } else {
     t.running = true;
@@ -1392,10 +1506,11 @@ function toggleTimer(key) {
         clearPreBreakWarning(key);
         playChime('break');
         notify(t.alertTitle, t.alertBody);
+        if (t.onComplete) t.onComplete();
         incrementBreaks();
         document.getElementById(t.countdownId).textContent = fmt(t.duration);
         document.getElementById(t.statusId).textContent = '✓ Done — restarting';
-        document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
+        document.getElementById(t.btnId).textContent = t.isReminder ? 'Start reminder' : 'Start';
         t.remaining = t.duration;
         updateRing(t, t.remaining, t.duration);
         syncMasterBtn();
@@ -1411,8 +1526,8 @@ function resetTimer(key) {
   clearPreBreakWarning(key);
   t.remaining = t.duration;
   document.getElementById(t.countdownId).textContent = fmt(t.duration);
-  document.getElementById(t.statusId).textContent = key === 'hydration' ? 'Drink reminder' : 'Ready to start';
-  document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
+  document.getElementById(t.statusId).textContent = t.defaultStatus || 'Ready to start';
+  document.getElementById(t.btnId).textContent = t.isReminder ? 'Start reminder' : 'Start';
   updateRing(t, t.duration, t.duration);
   syncMasterBtn();
 }
@@ -2041,6 +2156,9 @@ updateFocusRing();
   timers.shoulder.duration = timers.shoulder.remaining = cfg.shoulderDuration * 60;
   timers.walk.duration = timers.walk.remaining = cfg.walkDuration * 60;
   timers.hydration.duration = timers.hydration.remaining = cfg.hydrationDuration * 60;
+  timers.wrist.duration = timers.wrist.remaining = cfg.wristDuration * 60;
+  timers.neck.duration = timers.neck.remaining = cfg.neckDuration * 60;
+  timers.breath.duration = timers.breath.remaining = cfg.breathDuration * 60;
   SS.durations.sit = cfg.sitDuration * 60;
   SS.durations.stand = cfg.standDuration * 60;
   SS.remaining = SS.durations.sit;
