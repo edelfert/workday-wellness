@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Desk Wellness</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0d;
+    --surface: #1a1a16;
+    --surface2: #242420;
+    --border: #2e2e28;
+    --text: #e8e6df;
+    --muted: #7a7870;
+    --accent-sit: #c8a96e;
+    --accent-stand: #7eb89a;
+    --accent-eyes: #8fb5d4;
+    --accent-shoulder: #d4a574;
+    --accent-wrist: #b8a0cc;
+    --accent-walk: #9ab87e;
+    --accent-breath: #d4c574;
+    --accent-eod: #cc8888;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 24px;
+    line-height: 1.5;
+  }
+
+  .noise {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+
+  header {
+    display: flex; align-items: baseline; gap: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px; margin-bottom: 32px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 2rem; font-weight: 400;
+    color: var(--text); letter-spacing: -0.02em;
+  }
+
+  .subtitle { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* TIME DISPLAY */
+  .clock {
+    font-size: 0.75rem; color: var(--muted);
+    margin-left: auto; letter-spacing: 0.05em;
+  }
+
+  /* MAIN GRID */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s;
+  }
+
+  .card:hover { border-color: #3e3e38; }
+
+  .card.active { animation: pulse-border 2s ease-in-out infinite; }
+
+  @keyframes pulse-border {
+    0%, 100% { border-color: var(--card-accent); box-shadow: 0 0 0 0 color-mix(in srgb, var(--card-accent) 0%, transparent); }
+    50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--card-accent) 20%, transparent); }
+  }
+
+  .card-sit { --card-accent: var(--accent-sit); }
+  .card-stand { --card-accent: var(--accent-stand); }
+  .card-eyes { --card-accent: var(--accent-eyes); }
+  .card-shoulder { --card-accent: var(--accent-shoulder); }
+  .card-wrist { --card-accent: var(--accent-wrist); }
+  .card-walk { --card-accent: var(--accent-walk); }
+  .card-breath { --card-accent: var(--accent-breath); }
+  .card-eod { --card-accent: var(--accent-eod); grid-column: 1 / -1; }
+
+  .card-accent-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px; background: var(--card-accent);
+    transform: scaleX(0); transform-origin: left;
+    transition: transform 0.3s;
+  }
+  .card.active .card-accent-bar { transform: scaleX(1); }
+
+  .card-label {
+    font-size: 0.65rem; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.2rem; font-weight: 400;
+    color: var(--card-accent);
+    margin-bottom: 12px;
+  }
+
+  .card-desc {
+    font-size: 0.72rem; color: var(--muted);
+    margin-bottom: 16px; line-height: 1.6;
+  }
+
+  /* TIMER RING */
+  .timer-wrap {
+    display: flex; align-items: center; gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+
+  .ring-wrap svg { transform: rotate(-90deg); }
+
+  .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+  .ring-fill { fill: none; stroke: var(--card-accent); stroke-width: 3; stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear; }
+
+  .ring-text {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 500; color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .timer-info { flex: 1; }
+  .timer-countdown { font-size: 1.4rem; color: var(--text); letter-spacing: -0.03em; }
+  .timer-label { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.08em;
+    text-transform: uppercase; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; background: transparent;
+    color: var(--muted); transition: all 0.2s;
+  }
+
+  .btn:hover { border-color: var(--card-accent); color: var(--card-accent); }
+  .btn.primary { background: var(--card-accent); border-color: var(--card-accent); color: var(--bg); font-weight: 500; }
+  .btn.primary:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* STAND/SIT TOGGLE */
+  .mode-toggle {
+    display: flex; gap: 0; border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; margin-bottom: 16px;
+  }
+
+  .mode-btn {
+    flex: 1; padding: 8px; background: transparent;
+    border: none; cursor: pointer; font-family: 'DM Mono', monospace;
+    font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); transition: all 0.2s;
+  }
+  .mode-btn.active-sit { background: var(--accent-sit); color: var(--bg); }
+  .mode-btn.active-stand { background: var(--accent-stand); color: var(--bg); }
+
+  /* STATUS BADGE */
+  .badge {
+    display: inline-block; font-size: 0.6rem; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
+    border: 1px solid currentColor; margin-bottom: 12px;
+  }
+  .badge-active { color: var(--card-accent); }
+  .badge-done { color: var(--accent-stand); }
+  .badge-idle { color: var(--muted); }
+
+  /* STEPS */
+  .steps { list-style: none; }
+  .steps li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    font-size: 0.72rem; color: var(--muted);
+    transition: color 0.2s;
+  }
+  .steps li:last-child { border-bottom: none; }
+  .steps li.done { color: var(--accent-stand); }
+  .steps li.current { color: var(--text); }
+
+  .step-num {
+    font-size: 0.6rem; color: var(--muted);
+    min-width: 16px; margin-top: 1px;
+  }
+  .steps li.done .step-num { color: var(--accent-stand); }
+  .steps li.current .step-num { color: var(--card-accent); }
+
+  /* BREATHWORK ANIMATION */
+  .breath-visual {
+    display: flex; align-items: center; justify-content: center;
+    height: 80px; margin-bottom: 16px;
+  }
+
+  .breath-circle {
+    width: 50px; height: 50px; border-radius: 50%;
+    border: 2px solid var(--accent-breath);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem; color: var(--accent-breath);
+    text-transform: uppercase; letter-spacing: 0.05em;
+    transition: all 0.5s ease;
+  }
+
+  .breath-circle.inhale { transform: scale(1.6); background: color-mix(in srgb, var(--accent-breath) 10%, transparent); }
+  .breath-circle.hold { transform: scale(1.6); background: color-mix(in srgb, var(--accent-breath) 15%, transparent); }
+  .breath-circle.exhale { transform: scale(0.8); background: transparent; }
+
+  /* NOTIFICATION TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 100;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 18px;
+    font-size: 0.75rem; color: var(--text);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 280px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast-title { font-weight: 500; margin-bottom: 3px; }
+  .toast-body { color: var(--muted); font-size: 0.68rem; }
+
+  /* EOD CARD */
+  .eod-steps {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    margin-bottom: 16px;
+  }
+  .eod-step {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-size: 0.68rem; cursor: pointer; transition: all 0.2s;
+  }
+  .eod-step:hover { border-color: var(--accent-eod); }
+  .eod-step.checked { border-color: var(--accent-stand); background: color-mix(in srgb, var(--accent-stand) 8%, var(--surface2)); }
+  .eod-step-icon { font-size: 1.1rem; margin-bottom: 4px; }
+  .eod-step-label { color: var(--muted); }
+  .eod-step.checked .eod-step-label { color: var(--accent-stand); }
+
+  /* WIDE CARD - SIT/STAND takes full row */
+  .card-sitstand { grid-column: 1 / -1; }
+
+  /* Progress bar under sit/stand */
+  .pos-progress {
+    height: 4px; background: var(--border); border-radius: 2px;
+    margin-top: 12px; overflow: hidden;
+  }
+  .pos-progress-fill {
+    height: 100%; border-radius: 2px;
+    background: var(--card-accent);
+    transition: width 1s linear;
+  }
+
+  /* Notification permission banner */
+  .notif-banner {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; font-size: 0.72rem;
+  }
+  .notif-banner.hidden { display: none; }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    .card-eod { grid-column: 1; }
+    .card-sitstand { grid-column: 1; }
+    .eod-steps { grid-template-columns: repeat(2, 1fr); }
+    h1 { font-size: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+<div class="noise"></div>
+<div class="app">
+
+  <header>
+    <div>
+      <h1>Desk Wellness</h1>
+      <div class="subtitle">Workplace recovery companion</div>
+    </div>
+    <div class="clock" id="clock">--:--</div>
+  </header>
+
+  <div class="notif-banner" id="notifBanner">
+    <span>🔔</span>
+    <span style="flex:1; color: var(--muted)">Enable notifications to get reminded even when this tab isn't in focus.</span>
+    <button class="btn primary" onclick="requestNotifs()">Enable</button>
+    <button class="btn" onclick="document.getElementById('notifBanner').classList.add('hidden')">Dismiss</button>
+  </div>
+
+  <div class="grid">
+
+    <!-- SIT/STAND TIMER -->
+    <div class="card card-sitstand card-sit" id="sitstandCard" style="--card-accent: var(--accent-sit)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Position Timer</div>
+      <div class="card-title" id="sitstandTitle">Sit / Stand Rhythm</div>
+
+      <div class="mode-toggle">
+        <button class="mode-btn active-sit" id="sitBtn" onclick="setMode('sit')">⬇ Sitting</button>
+        <button class="mode-btn" id="standBtn" onclick="setMode('stand')">⬆ Standing</button>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="sitstandRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="sitstandRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="sitstandCountdown">25:00</div>
+          <div class="timer-label" id="sitstandStatus">Ready to start</div>
+        </div>
+      </div>
+
+      <div class="pos-progress">
+        <div class="pos-progress-fill" id="sitstandProgress" style="width:0%"></div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <div class="btn-row">
+          <button class="btn primary" id="sitstandStartBtn" onclick="toggleSitstand()">Start</button>
+          <button class="btn" onclick="resetSitstand()">Reset</button>
+        </div>
+        <div style="font-size: 0.65rem; color: var(--muted); margin-top: 8px;">
+          Sit 25 min → Stand 20 min → repeat
+        </div>
+      </div>
+    </div>
+
+    <!-- 20-20-20 EYES -->
+    <div class="card card-eyes" style="--card-accent: var(--accent-eyes)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Eye Strain</div>
+      <div class="card-title">20-20-20 Rule</div>
+      <div class="card-desc">Every 20 min, look at something 20 ft away for 20 seconds.</div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="eyesRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="eyesRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="eyesCountdown">20:00</div>
+          <div class="timer-label" id="eyesStatus">Ready to start</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="eyesStartBtn" onclick="toggleTimer('eyes')">Start</button>
+        <button class="btn" onclick="resetTimer('eyes')">Reset</button>
+      </div>
+    </div>
+
+    <!-- SHOULDER CHECK-IN -->
+    <div class="card card-shoulder" style="--card-accent: var(--accent-shoulder)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Posture</div>
+      <div class="card-title">Shoulder Check-In</div>
+      <div class="card-desc">Reminder to drop and roll your shoulders. Releases desk tension.</div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="shoulderRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="shoulderRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="shoulderCountdown">45:00</div>
+          <div class="timer-label" id="shoulderStatus">Ready to start</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="shoulderStartBtn" onclick="toggleTimer('shoulder')">Start</button>
+        <button class="btn" onclick="resetTimer('shoulder')">Reset</button>
+        <button class="btn" onclick="snoozeTimer('shoulder', 5)">+5 min</button>
+      </div>
+    </div>
+
+    <!-- WRIST STRETCHES -->
+    <div class="card card-wrist" style="--card-accent: var(--accent-wrist)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Recovery</div>
+      <div class="card-title">Wrist Stretches</div>
+      <div class="card-desc">Quick guided stretch for IT hands. Takes ~90 seconds.</div>
+
+      <ul class="steps" id="wristSteps">
+        <li class="current"><span class="step-num">01</span>Extend arm, pull fingers back gently — 15 sec</li>
+        <li><span class="step-num">02</span>Flip hand down, press back — 15 sec</li>
+        <li><span class="step-num">03</span>Make fist, then fan fingers wide — 5 reps</li>
+        <li><span class="step-num">04</span>Wrist circles, both directions — 10 each</li>
+        <li><span class="step-num">05</span>Prayer hands stretch, hold — 20 sec</li>
+      </ul>
+
+      <div style="margin-top: 12px;">
+        <div class="btn-row">
+          <button class="btn primary" id="wristStartBtn" onclick="startWristRoutine()">Start Routine</button>
+          <button class="btn" onclick="resetWristRoutine()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALK REMINDER -->
+    <div class="card card-walk" style="--card-accent: var(--accent-walk)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Movement</div>
+      <div class="card-title">Walk Break</div>
+      <div class="card-desc">Short walk reduces cortisol and resets focus. Aim for 1x daily minimum.</div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="walkRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="walkRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="walkCountdown">90:00</div>
+          <div class="timer-label" id="walkStatus">Ready to start</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="walkStartBtn" onclick="toggleTimer('walk')">Start</button>
+        <button class="btn" onclick="resetTimer('walk')">Reset</button>
+      </div>
+    </div>
+
+    <!-- PHYSIOLOGICAL SIGH -->
+    <div class="card card-breath" style="--card-accent: var(--accent-breath)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Nervous System</div>
+      <div class="card-title">Physiological Sigh</div>
+      <div class="card-desc">Double inhale through nose, long slow exhale. 1-3 rounds. Fastest stress reset.</div>
+
+      <div class="breath-visual">
+        <div class="breath-circle" id="breathCircle">Ready</div>
+      </div>
+
+      <div id="breathInstruction" style="font-size: 0.72rem; color: var(--muted); text-align: center; margin-bottom: 12px; min-height: 18px;"></div>
+
+      <div class="btn-row" style="justify-content: center;">
+        <button class="btn primary" id="breathStartBtn" onclick="startBreath()">Begin</button>
+        <button class="btn" onclick="stopBreath()">Stop</button>
+      </div>
+    </div>
+
+    <!-- END OF DAY ROUTINE -->
+    <div class="card card-eod" style="--card-accent: var(--accent-eod)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">End of Workday</div>
+      <div class="card-title">Shutdown Ritual</div>
+      <div class="card-desc">Close out the workday intentionally. Check each step when done.</div>
+
+      <div class="eod-steps" id="eodSteps">
+        <div class="eod-step" onclick="toggleEod(0)">
+          <div class="eod-step-icon">🧘</div>
+          <div style="font-size: 0.72rem; margin-bottom: 3px;">Physiological Sigh</div>
+          <div class="eod-step-label">Take 2-3 rounds</div>
+        </div>
+        <div class="eod-step" onclick="toggleEod(1)">
+          <div class="eod-step-icon">🙆</div>
+          <div style="font-size: 0.72rem; margin-bottom: 3px;">Doorway Pec Stretch</div>
+          <div class="eod-step-label">30 sec each side</div>
+        </div>
+        <div class="eod-step" onclick="toggleEod(2)">
+          <div class="eod-step-icon">🐱</div>
+          <div style="font-size: 0.72rem; margin-bottom: 3px;">Cat-Cow Stretch</div>
+          <div class="eod-step-label">60 seconds</div>
+        </div>
+        <div class="eod-step" onclick="toggleEod(3)">
+          <div class="eod-step-icon">💻</div>
+          <div style="font-size: 0.72rem; margin-bottom: 3px;">Close Laptop</div>
+          <div class="eod-step-label">Hard stop on work</div>
+        </div>
+        <div class="eod-step" onclick="toggleEod(4)">
+          <div class="eod-step-icon">🚶</div>
+          <div style="font-size: 0.72rem; margin-bottom: 3px;">Short Walk</div>
+          <div class="eod-step-label">Even just 10 min</div>
+        </div>
+        <div class="eod-step" onclick="toggleEod(5)">
+          <div class="eod-step-icon">📝</div>
+          <div style="font-size: 0.72rem; margin-bottom: 3px;">Brain Dump</div>
+          <div class="eod-step-label">Write tomorrow's top 3</div>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <div id="eodProgress" style="font-size: 0.72rem; color: var(--muted);">0 of 6 complete</div>
+        <button class="btn" onclick="resetEod()">Reset</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-title" id="toastTitle"></div>
+  <div class="toast-body" id="toastBody"></div>
+</div>
+
+<script>
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== NOTIFICATIONS =====
+function requestNotifs() {
+  if ('Notification' in window) {
+    Notification.requestPermission().then(p => {
+      if (p === 'granted') {
+        document.getElementById('notifBanner').classList.add('hidden');
+        showToast('Notifications enabled', 'You\'ll be alerted even when tab is inactive.');
+      }
+    });
+  }
+}
+
+if ('Notification' in window && Notification.permission === 'granted') {
+  document.getElementById('notifBanner').classList.add('hidden');
+}
+
+function notify(title, body) {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, { body, icon: '' });
+  }
+  showToast(title, body);
+}
+
+// ===== TOAST =====
+let toastTimeout;
+function showToast(title, body) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastBody').textContent = body;
+  t.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// ===== GENERIC TIMER ENGINE =====
+const timers = {
+  eyes:     { duration: 20*60, remaining: 20*60, interval: null, running: false,
+              ringId: 'eyesRing', ringTextId: 'eyesRingText',
+              countdownId: 'eyesCountdown', statusId: 'eyesStatus', btnId: 'eyesStartBtn',
+              alertTitle: '👁 Eye Break!', alertBody: 'Look 20 ft away for 20 seconds.' },
+  shoulder: { duration: 45*60, remaining: 45*60, interval: null, running: false,
+              ringId: 'shoulderRing', ringTextId: 'shoulderRingText',
+              countdownId: 'shoulderCountdown', statusId: 'shoulderStatus', btnId: 'shoulderStartBtn',
+              alertTitle: '💆 Shoulder Check!', alertBody: 'Drop your shoulders. Roll them back.' },
+  walk:     { duration: 90*60, remaining: 90*60, interval: null, running: false,
+              ringId: 'walkRing', ringTextId: 'walkRingText',
+              countdownId: 'walkCountdown', statusId: 'walkStatus', btnId: 'walkStartBtn',
+              alertTitle: '🚶 Walk Time!', alertBody: 'Step outside. Even 10 minutes helps.' },
+};
+
+function fmt(s) {
+  const m = Math.floor(s/60), sec = s%60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function updateRing(t, remaining, duration) {
+  const circ = 176;
+  const pct = remaining / duration;
+  const offset = circ * (1 - pct);
+  document.getElementById(t.ringId).style.strokeDashoffset = offset;
+  const mins = Math.ceil(remaining/60);
+  document.getElementById(t.ringTextId).textContent = mins < 60 ? mins+'m' : '—';
+}
+
+function toggleTimer(key) {
+  const t = timers[key];
+  if (t.running) {
+    clearInterval(t.interval); t.running = false;
+    document.getElementById(t.btnId).textContent = 'Resume';
+    document.getElementById(t.statusId).textContent = 'Paused';
+  } else {
+    t.running = true;
+    document.getElementById(t.btnId).textContent = 'Pause';
+    document.getElementById(t.statusId).textContent = 'Running';
+    t.interval = setInterval(() => {
+      t.remaining--;
+      document.getElementById(t.countdownId).textContent = fmt(t.remaining);
+      updateRing(t, t.remaining, t.duration);
+      if (t.remaining <= 0) {
+        clearInterval(t.interval); t.running = false;
+        notify(t.alertTitle, t.alertBody);
+        document.getElementById(t.countdownId).textContent = fmt(t.duration);
+        document.getElementById(t.statusId).textContent = '✓ Done — restarting';
+        document.getElementById(t.btnId).textContent = 'Start';
+        t.remaining = t.duration;
+        updateRing(t, t.remaining, t.duration);
+      }
+    }, 1000);
+  }
+}
+
+function resetTimer(key) {
+  const t = timers[key];
+  clearInterval(t.interval); t.running = false;
+  t.remaining = t.duration;
+  document.getElementById(t.countdownId).textContent = fmt(t.duration);
+  document.getElementById(t.statusId).textContent = 'Ready to start';
+  document.getElementById(t.btnId).textContent = 'Start';
+  updateRing(t, t.duration, t.duration);
+}
+
+function snoozeTimer(key, mins) {
+  timers[key].remaining += mins * 60;
+  document.getElementById(timers[key].countdownId).textContent = fmt(timers[key].remaining);
+}
+
+// ===== SIT/STAND TIMER =====
+const SS = {
+  mode: 'sit', // 'sit' or 'stand'
+  durations: { sit: 25*60, stand: 20*60 },
+  remaining: 25*60,
+  running: false,
+  interval: null
+};
+
+function setMode(mode) {
+  SS.mode = mode;
+  SS.remaining = SS.durations[mode];
+  const card = document.getElementById('sitstandCard');
+  const accent = mode === 'sit' ? 'var(--accent-sit)' : 'var(--accent-stand)';
+  card.style.setProperty('--card-accent', accent);
+  document.getElementById('sitBtn').className = 'mode-btn' + (mode === 'sit' ? ' active-sit' : '');
+  document.getElementById('standBtn').className = 'mode-btn' + (mode === 'stand' ? ' active-stand' : '');
+  document.getElementById('sitstandCountdown').textContent = fmt(SS.remaining);
+  document.getElementById('sitstandStatus').textContent = `Ready — ${mode === 'sit' ? 'sitting' : 'standing'}`;
+  updateSSRing();
+}
+
+function updateSSRing() {
+  const circ = 176;
+  const dur = SS.durations[SS.mode];
+  const pct = SS.remaining / dur;
+  const offset = circ * (1 - pct);
+  document.getElementById('sitstandRing').style.strokeDashoffset = offset;
+  document.getElementById('sitstandProgress').style.width = ((1-pct)*100) + '%';
+  const mins = Math.ceil(SS.remaining/60);
+  document.getElementById('sitstandRingText').textContent = mins+'m';
+}
+
+function toggleSitstand() {
+  if (SS.running) {
+    clearInterval(SS.interval); SS.running = false;
+    document.getElementById('sitstandStartBtn').textContent = 'Resume';
+    document.getElementById('sitstandStatus').textContent = 'Paused';
+  } else {
+    SS.running = true;
+    document.getElementById('sitstandStartBtn').textContent = 'Pause';
+    document.getElementById('sitstandStatus').textContent = SS.mode === 'sit' ? 'Sitting...' : 'Standing...';
+    SS.interval = setInterval(() => {
+      SS.remaining--;
+      document.getElementById('sitstandCountdown').textContent = fmt(SS.remaining);
+      updateSSRing();
+      if (SS.remaining <= 0) {
+        clearInterval(SS.interval); SS.running = false;
+        const next = SS.mode === 'sit' ? 'stand' : 'sit';
+        const msg = next === 'stand' ? 'Time to stand up!' : 'Time to sit down.';
+        notify('⏱ Position Change', msg);
+        document.getElementById('sitstandStartBtn').textContent = 'Start';
+        setMode(next);
+      }
+    }, 1000);
+  }
+}
+
+function resetSitstand() {
+  clearInterval(SS.interval); SS.running = false;
+  setMode('sit');
+  document.getElementById('sitstandStartBtn').textContent = 'Start';
+}
+
+// ===== WRIST ROUTINE =====
+const wristDurations = [15, 15, 12, 12, 20]; // approx seconds per step
+let wristStep = 0, wristInterval = null, wristRunning = false, wristRemaining = 0;
+
+function startWristRoutine() {
+  if (wristRunning) return;
+  wristRunning = true;
+  wristStep = 0;
+  document.getElementById('wristStartBtn').textContent = 'Running...';
+  document.getElementById('wristStartBtn').disabled = true;
+  runWristStep();
+}
+
+function runWristStep() {
+  if (wristStep >= 5) {
+    wristRunning = false;
+    document.getElementById('wristStartBtn').textContent = 'Done ✓';
+    document.getElementById('wristStartBtn').disabled = false;
+    showToast('Wrist routine complete ✓', 'Nice work. Repeat hourly.');
+    return;
+  }
+  updateWristHighlight();
+  wristRemaining = wristDurations[wristStep];
+  wristInterval = setInterval(() => {
+    wristRemaining--;
+    if (wristRemaining <= 0) {
+      clearInterval(wristInterval);
+      wristStep++;
+      runWristStep();
+    }
+  }, 1000);
+}
+
+function updateWristHighlight() {
+  const items = document.querySelectorAll('#wristSteps li');
+  items.forEach((li, i) => {
+    li.className = i < wristStep ? 'done' : i === wristStep ? 'current' : '';
+  });
+}
+
+function resetWristRoutine() {
+  clearInterval(wristInterval);
+  wristRunning = false; wristStep = 0; wristRemaining = 0;
+  document.getElementById('wristStartBtn').textContent = 'Start Routine';
+  document.getElementById('wristStartBtn').disabled = false;
+  updateWristHighlight();
+  const items = document.querySelectorAll('#wristSteps li');
+  items.forEach((li, i) => { li.className = i === 0 ? 'current' : ''; });
+}
+
+// ===== PHYSIOLOGICAL SIGH =====
+const breathPhases = [
+  { label: 'Inhale', cls: 'inhale', dur: 2000, instruction: 'First inhale — nose, fill lungs' },
+  { label: 'Inhale+', cls: 'inhale', dur: 1000, instruction: 'Second short inhale — top up lungs' },
+  { label: 'Exhale', cls: 'exhale', dur: 6000, instruction: 'Long slow exhale through mouth...' },
+  { label: 'Pause', cls: '', dur: 1500, instruction: 'Natural pause — ready for next round?' },
+];
+
+let breathPhaseIdx = 0, breathRound = 0, breathTimeout = null, breathActive = false;
+
+function startBreath() {
+  if (breathActive) return;
+  breathActive = true; breathRound = 0; breathPhaseIdx = 0;
+  document.getElementById('breathStartBtn').textContent = 'Running...';
+  runBreathPhase();
+}
+
+function runBreathPhase() {
+  if (breathRound >= 3) {
+    stopBreath();
+    showToast('Sigh complete ✓', 'Nervous system reset. You got this.');
+    return;
+  }
+  const phase = breathPhases[breathPhaseIdx];
+  const circle = document.getElementById('breathCircle');
+  circle.className = 'breath-circle ' + phase.cls;
+  circle.textContent = phase.label;
+  document.getElementById('breathInstruction').textContent = phase.instruction;
+
+  breathTimeout = setTimeout(() => {
+    breathPhaseIdx++;
+    if (breathPhaseIdx >= breathPhases.length) {
+      breathPhaseIdx = 0; breathRound++;
+    }
+    runBreathPhase();
+  }, phase.dur);
+}
+
+function stopBreath() {
+  clearTimeout(breathTimeout);
+  breathActive = false;
+  breathPhaseIdx = 0; breathRound = 0;
+  const circle = document.getElementById('breathCircle');
+  circle.className = 'breath-circle';
+  circle.textContent = 'Ready';
+  document.getElementById('breathInstruction').textContent = '';
+  document.getElementById('breathStartBtn').textContent = 'Begin';
+}
+
+// ===== EOD CHECKLIST =====
+const eodChecked = [false,false,false,false,false,false];
+
+function toggleEod(idx) {
+  eodChecked[idx] = !eodChecked[idx];
+  const steps = document.querySelectorAll('.eod-step');
+  steps[idx].classList.toggle('checked', eodChecked[idx]);
+  const done = eodChecked.filter(Boolean).length;
+  document.getElementById('eodProgress').textContent = `${done} of 6 complete`;
+  if (done === 6) {
+    showToast('Workday closed ✓', 'Great shutdown. Enjoy your evening, Eddie.');
+  }
+}
+
+function resetEod() {
+  eodChecked.fill(false);
+  document.querySelectorAll('.eod-step').forEach(s => s.classList.remove('checked'));
+  document.getElementById('eodProgress').textContent = '0 of 6 complete';
+}
+
+// Init rings
+Object.keys(timers).forEach(k => updateRing(timers[k], timers[k].duration, timers[k].duration));
+updateSSRing();
+</script>
+</body>
+</html>
