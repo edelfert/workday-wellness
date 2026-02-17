@@ -1,0 +1,13 @@
+[Desktop Entry]
+Name=Desk Wellness
+Comment=Workplace recovery companion
+GenericName=Wellness Timer
+Exec=desk-wellness %U
+Icon=com.deskwellness.app
+Type=Application
+Terminal=false
+Categories=Utility;HealthAndFitness;
+Keywords=wellness;health;timer;break;focus;hydration;posture;stretch;
+StartupWMClass=desk-wellness
+StartupNotify=true
+X-Flatpak=com.deskwellness.app

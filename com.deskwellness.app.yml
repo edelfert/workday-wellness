@@ -1,0 +1,45 @@
+app-id: com.deskwellness.app
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+base: org.electronjs.Electron2.BaseApp
+base-version: '24.08'
+command: desk-wellness
+separate-locales: false
+
+finish-args:
+  # Display
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  # Audio (future sound features)
+  - --socket=pulseaudio
+  # Network (Google Fonts CDN)
+  - --share=network
+  # GPU acceleration for Chromium
+  - --device=dri
+  # Desktop notifications
+  - --talk-name=org.freedesktop.Notifications
+  # System tray (KDE/StatusNotifier)
+  - --talk-name=org.kde.StatusNotifierWatcher
+  # Settings/dconf (for system theme detection)
+  - --filesystem=xdg-run/dconf
+  - --filesystem=~/.config/dconf:ro
+  - --talk-name=ca.desrt.dconf
+  - --env=DCONF_USER_CONFIG_DIR=.config/dconf
+
+modules:
+  - name: desk-wellness
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 desk-wellness.sh /app/bin/desk-wellness
+      - install -Dm644 desk-wellness.html /app/lib/desk-wellness/desk-wellness.html
+      - install -Dm644 main.js /app/lib/desk-wellness/main.js
+      - install -Dm644 preload.js /app/lib/desk-wellness/preload.js
+      - cp -r assets /app/lib/desk-wellness/assets
+      - install -Dm644 com.deskwellness.app.desktop /app/share/applications/com.deskwellness.app.desktop
+      - install -Dm644 assets/icon.png /app/share/icons/hicolor/512x512/apps/com.deskwellness.app.png
+      - install -Dm644 com.deskwellness.app.metainfo.xml /app/share/metainfo/com.deskwellness.app.metainfo.xml
+    sources:
+      - type: dir
+        path: .

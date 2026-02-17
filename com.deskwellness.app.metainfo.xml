@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.deskwellness.app</id>
+  <name>Desk Wellness</name>
+  <summary>Workplace recovery companion</summary>
+  <description>
+    <p>
+      Desk Wellness is a workplace wellness companion designed to help desk workers
+      maintain physical and mental health throughout the workday.
+    </p>
+    <p>Features include:</p>
+    <ul>
+      <li>Sit / Stand rhythm timer (25 min sit → 20 min stand)</li>
+      <li>20-20-20 eye strain rule timer</li>
+      <li>Shoulder and neck posture check-in reminders</li>
+      <li>Guided wrist and neck stretch routines</li>
+      <li>Walk break reminders</li>
+      <li>Hydration tracker with customizable daily goal</li>
+      <li>Focus Session mode (Pomodoro-style, pauses all reminders)</li>
+      <li>Physiological sigh guided breathing exercise</li>
+      <li>End-of-day shutdown ritual checklist</li>
+      <li>Daily stats: breaks, water intake, focus sessions, and streak</li>
+      <li>Fully customizable timer durations via settings panel</li>
+    </ul>
+  </description>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <url type="homepage">https://github.com/edelfert/workday-wellness</url>
+  <categories>
+    <category>Utility</category>
+    <category>HealthAndFitness</category>
+  </categories>
+  <keywords>
+    <keyword>wellness</keyword>
+    <keyword>health</keyword>
+    <keyword>timer</keyword>
+    <keyword>break</keyword>
+    <keyword>focus</keyword>
+    <keyword>pomodoro</keyword>
+    <keyword>hydration</keyword>
+    <keyword>posture</keyword>
+    <keyword>stretch</keyword>
+    <keyword>desk</keyword>
+  </keywords>
+  <launchable type="desktop-id">com.deskwellness.app.desktop</launchable>
+  <releases>
+    <release version="1.0.0" date="2025-01-01">
+      <description>
+        <p>Initial release with all wellness timers, hydration tracker, focus mode, and daily stats.</p>
+      </description>
+    </release>
+  </releases>
+  <content_rating type="oars-1.1"/>
+</component>
