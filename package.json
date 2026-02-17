@@ -12,7 +12,12 @@
     "dist": "electron-builder --mac",
     "dist:dmg": "electron-builder --mac dmg --arm64",
     "dist:zip": "electron-builder --mac zip --arm64",
-    "dist:x64": "electron-builder --mac zip --x64"
+    "dist:x64": "electron-builder --mac zip --x64",
+    "dist:linux": "electron-builder --linux AppImage flatpak",
+    "dist:appimage": "electron-builder --linux AppImage",
+    "dist:flatpak": "electron-builder --linux flatpak",
+    "dist:deb": "electron-builder --linux deb",
+    "dist:all": "electron-builder -ml"
   },
   "build": {
     "appId": "com.deskwellness.app",
@@ -49,6 +54,51 @@
         { "x": 140, "y": 190, "type": "file" },
         { "x": 400, "y": 190, "type": "link", "path": "/Applications" }
       ]
+    },
+    "linux": {
+      "icon": "assets/icon.png",
+      "category": "Utility;HealthAndFitness;",
+      "description": "Workplace recovery companion — sit/stand timers, eye breaks, hydration, focus sessions & more.",
+      "maintainer": "Desk Wellness",
+      "desktop": {
+        "Name": "Desk Wellness",
+        "Comment": "Workplace recovery companion",
+        "Keywords": "wellness;health;timer;break;focus;hydration;",
+        "StartupWMClass": "desk-wellness"
+      },
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": ["x64", "arm64"]
+        },
+        {
+          "target": "flatpak",
+          "arch": ["x64", "arm64"]
+        }
+      ]
+    },
+    "flatpak": {
+      "runtimeVersion": "24.08",
+      "sdk": "org.freedesktop.Sdk",
+      "runtime": "org.freedesktop.Platform",
+      "base": "org.electronjs.Electron2.BaseApp",
+      "baseVersion": "24.08",
+      "branch": "stable",
+      "finishArgs": [
+        "--share=ipc",
+        "--socket=x11",
+        "--socket=wayland",
+        "--socket=pulseaudio",
+        "--share=network",
+        "--device=dri",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.kde.StatusNotifierWatcher",
+        "--filesystem=xdg-run/dconf",
+        "--filesystem=~/.config/dconf:ro",
+        "--talk-name=ca.desrt.dconf",
+        "--env=DCONF_USER_CONFIG_DIR=.config/dconf"
+      ],
+      "modules": []
     },
     "publish": null
   },
