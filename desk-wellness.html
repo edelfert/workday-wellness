@@ -477,6 +477,7 @@
     </div>
     <div class="stats-actions">
       <div class="streak-badge" id="streakBadge">🔥 <span id="streakCount">0</span> <span id="streakLabel">day</span> streak</div>
+      <button class="btn primary" id="masterBtn" onclick="masterToggle()" style="--card-accent: var(--accent-stand);">▶ Start All</button>
       <button class="btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
     </div>
   </div>
@@ -1156,6 +1157,38 @@ function updateRing(t, remaining, duration) {
   document.getElementById(t.ringTextId).textContent = mins < 60 ? mins+'m' : '—';
 }
 
+// ===== MASTER START / PAUSE =====
+const MASTER_KEYS = ['eyes', 'shoulder', 'walk', 'hydration'];
+
+function allRunning() {
+  return SS.running && MASTER_KEYS.every(k => timers[k].running);
+}
+
+function syncMasterBtn() {
+  const btn = document.getElementById('masterBtn');
+  if (allRunning()) {
+    btn.textContent = '⏸ Pause All';
+    btn.style.setProperty('--card-accent', 'var(--accent-shoulder)');
+  } else {
+    btn.textContent = '▶ Start All';
+    btn.style.setProperty('--card-accent', 'var(--accent-stand)');
+  }
+}
+
+function masterToggle() {
+  if (allRunning()) {
+    // Pause everything
+    if (SS.running) toggleSitstand();
+    MASTER_KEYS.forEach(k => { if (timers[k].running) toggleTimer(k); });
+  } else {
+    // Start anything not already running
+    if (!SS.running) toggleSitstand();
+    MASTER_KEYS.forEach(k => { if (!timers[k].running) toggleTimer(k); });
+  }
+  // syncMasterBtn is called inside toggleSitstand/toggleTimer, but call once more to be safe
+  syncMasterBtn();
+}
+
 function toggleTimer(key) {
   const t = timers[key];
   if (t.running) {
@@ -1179,9 +1212,11 @@ function toggleTimer(key) {
         document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
         t.remaining = t.duration;
         updateRing(t, t.remaining, t.duration);
+        syncMasterBtn();
       }
     }, 1000);
   }
+  syncMasterBtn();
 }
 
 function resetTimer(key) {
@@ -1253,9 +1288,11 @@ function toggleSitstand() {
         incrementBreaks();
         document.getElementById('sitstandStartBtn').textContent = 'Start';
         setMode(next);
+        syncMasterBtn();
       }
     }, 1000);
   }
+  syncMasterBtn();
 }
 
 function resetSitstand() {
@@ -1591,6 +1628,7 @@ loadDailyStats();
 loadStreak();
 loadEodState();
 renderWaterGlasses();
+syncMasterBtn();
 </script>
 </body>
 </html>
