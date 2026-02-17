@@ -1,0 +1,59 @@
+{
+  "name": "desk-wellness",
+  "productName": "Desk Wellness",
+  "version": "1.0.0",
+  "description": "Workplace recovery companion — sit/stand timers, eye breaks, hydration, focus sessions & more.",
+  "main": "main.js",
+  "author": {
+    "name": "Desk Wellness"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac",
+    "dist:dmg": "electron-builder --mac dmg --arm64",
+    "dist:zip": "electron-builder --mac zip --arm64",
+    "dist:x64": "electron-builder --mac zip --x64"
+  },
+  "build": {
+    "appId": "com.deskwellness.app",
+    "productName": "Desk Wellness",
+    "copyright": "Copyright © 2025 Desk Wellness",
+    "files": [
+      "main.js",
+      "preload.js",
+      "desk-wellness.html",
+      "assets/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.healthcare-fitness",
+      "icon": "assets/icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64", "x64"]
+        }
+      ],
+      "minimumSystemVersion": "11.0",
+      "darkModeSupport": true
+    },
+    "dmg": {
+      "title": "Desk Wellness",
+      "background": "assets/dmg-background.png",
+      "icon": "assets/icon.icns",
+      "iconSize": 80,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        { "x": 140, "y": 190, "type": "file" },
+        { "x": 400, "y": 190, "type": "link", "path": "/Applications" }
+      ]
+    },
+    "publish": null
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8"
+  }
+}

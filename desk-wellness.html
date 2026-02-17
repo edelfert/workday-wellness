@@ -23,6 +23,9 @@
     --accent-walk: #9ab87e;
     --accent-breath: #d4c574;
     --accent-eod: #cc8888;
+    --accent-hydration: #74c4d4;
+    --accent-focus: #a8b8cc;
+    --accent-neck: #d4b8a0;
   }
 
   body {
@@ -39,12 +42,13 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
   }
 
-  .app { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; }
+  .app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; }
 
+  /* ===== HEADER ===== */
   header {
     display: flex; align-items: baseline; gap: 16px;
     border-bottom: 1px solid var(--border);
-    padding-bottom: 20px; margin-bottom: 32px;
+    padding-bottom: 16px; margin-bottom: 16px;
   }
 
   h1 {
@@ -55,13 +59,56 @@
 
   .subtitle { color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
 
-  /* TIME DISPLAY */
   .clock {
     font-size: 0.75rem; color: var(--muted);
     margin-left: auto; letter-spacing: 0.05em;
   }
 
-  /* MAIN GRID */
+  /* ===== DAILY STATS BAR ===== */
+  .stats-bar {
+    display: flex; align-items: center; gap: 24px;
+    padding: 10px 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 20px; flex-wrap: wrap;
+  }
+
+  .stat-item {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .stat-label {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  .stat-value {
+    font-size: 0.8rem; color: var(--text); font-weight: 500;
+  }
+
+  .stat-sep { color: var(--border); font-size: 0.8rem; }
+
+  .streak-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.65rem; padding: 2px 8px; border-radius: 20px;
+    border: 1px solid var(--accent-stand); color: var(--accent-stand);
+  }
+
+  /* Settings + focus buttons in stats bar */
+  .stats-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+
+  /* ===== FOCUS MODE BANNER ===== */
+  .focus-banner {
+    display: none; align-items: center; gap: 12px;
+    padding: 10px 16px; background: color-mix(in srgb, var(--accent-focus) 12%, var(--surface));
+    border: 1px solid var(--accent-focus); border-radius: 10px;
+    margin-bottom: 20px; font-size: 0.72rem;
+  }
+  .focus-banner.active { display: flex; }
+  .focus-banner-label { color: var(--accent-focus); font-weight: 500; }
+  .focus-banner-time { color: var(--text); font-size: 1rem; }
+  .focus-banner-sub { color: var(--muted); font-size: 0.65rem; }
+
+  /* ===== MAIN GRID ===== */
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -79,8 +126,17 @@
   }
 
   .card:hover { border-color: #3e3e38; }
-
   .card.active { animation: pulse-border 2s ease-in-out infinite; }
+
+  .card.focus-paused {
+    opacity: 0.45; pointer-events: none;
+  }
+  .card.focus-paused::after {
+    content: 'Focus Mode Active'; position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--accent-focus); pointer-events: none;
+  }
 
   @keyframes pulse-border {
     0%, 100% { border-color: var(--card-accent); box-shadow: 0 0 0 0 color-mix(in srgb, var(--card-accent) 0%, transparent); }
@@ -88,13 +144,15 @@
   }
 
   .card-sit { --card-accent: var(--accent-sit); }
-  .card-stand { --card-accent: var(--accent-stand); }
   .card-eyes { --card-accent: var(--accent-eyes); }
   .card-shoulder { --card-accent: var(--accent-shoulder); }
   .card-wrist { --card-accent: var(--accent-wrist); }
   .card-walk { --card-accent: var(--accent-walk); }
   .card-breath { --card-accent: var(--accent-breath); }
   .card-eod { --card-accent: var(--accent-eod); grid-column: 1 / -1; }
+  .card-hydration { --card-accent: var(--accent-hydration); }
+  .card-focus { --card-accent: var(--accent-focus); }
+  .card-neck { --card-accent: var(--accent-neck); }
 
   .card-accent-bar {
     position: absolute; top: 0; left: 0; right: 0;
@@ -122,20 +180,17 @@
     margin-bottom: 16px; line-height: 1.6;
   }
 
-  /* TIMER RING */
+  /* ===== TIMER RING ===== */
   .timer-wrap {
     display: flex; align-items: center; gap: 16px;
     margin-bottom: 16px;
   }
 
   .ring-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
-
   .ring-wrap svg { transform: rotate(-90deg); }
-
   .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
   .ring-fill { fill: none; stroke: var(--card-accent); stroke-width: 3; stroke-linecap: round;
     transition: stroke-dashoffset 1s linear; }
-
   .ring-text {
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -147,7 +202,7 @@
   .timer-countdown { font-size: 1.4rem; color: var(--text); letter-spacing: -0.03em; }
   .timer-label { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
 
-  /* BUTTONS */
+  /* ===== BUTTONS ===== */
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
   .btn {
@@ -164,7 +219,7 @@
   .btn.primary:hover { opacity: 0.85; }
   .btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* STAND/SIT TOGGLE */
+  /* ===== STAND/SIT TOGGLE ===== */
   .mode-toggle {
     display: flex; gap: 0; border: 1px solid var(--border);
     border-radius: 8px; overflow: hidden; margin-bottom: 16px;
@@ -179,23 +234,23 @@
   .mode-btn.active-sit { background: var(--accent-sit); color: var(--bg); }
   .mode-btn.active-stand { background: var(--accent-stand); color: var(--bg); }
 
-  /* STATUS BADGE */
-  .badge {
-    display: inline-block; font-size: 0.6rem; letter-spacing: 0.1em;
-    text-transform: uppercase; padding: 2px 8px; border-radius: 20px;
-    border: 1px solid currentColor; margin-bottom: 12px;
+  /* ===== PROGRESS BAR ===== */
+  .pos-progress {
+    height: 4px; background: var(--border); border-radius: 2px;
+    margin-top: 12px; overflow: hidden;
   }
-  .badge-active { color: var(--card-accent); }
-  .badge-done { color: var(--accent-stand); }
-  .badge-idle { color: var(--muted); }
+  .pos-progress-fill {
+    height: 100%; border-radius: 2px;
+    background: var(--card-accent);
+    transition: width 1s linear;
+  }
 
-  /* STEPS */
+  /* ===== STEPS ===== */
   .steps { list-style: none; }
   .steps li {
     display: flex; align-items: flex-start; gap: 10px;
     padding: 6px 0; border-bottom: 1px solid var(--border);
-    font-size: 0.72rem; color: var(--muted);
-    transition: color 0.2s;
+    font-size: 0.72rem; color: var(--muted); transition: color 0.2s;
   }
   .steps li:last-child { border-bottom: none; }
   .steps li.done { color: var(--accent-stand); }
@@ -208,7 +263,7 @@
   .steps li.done .step-num { color: var(--accent-stand); }
   .steps li.current .step-num { color: var(--card-accent); }
 
-  /* BREATHWORK ANIMATION */
+  /* ===== BREATHWORK ANIMATION ===== */
   .breath-visual {
     display: flex; align-items: center; justify-content: center;
     height: 80px; margin-bottom: 16px;
@@ -227,21 +282,21 @@
   .breath-circle.hold { transform: scale(1.6); background: color-mix(in srgb, var(--accent-breath) 15%, transparent); }
   .breath-circle.exhale { transform: scale(0.8); background: transparent; }
 
-  /* NOTIFICATION TOAST */
+  /* ===== NOTIFICATION TOAST ===== */
   .toast {
-    position: fixed; bottom: 24px; right: 24px; z-index: 100;
+    position: fixed; bottom: 24px; right: 24px; z-index: 1000;
     background: var(--surface2); border: 1px solid var(--border);
     border-radius: 10px; padding: 14px 18px;
     font-size: 0.75rem; color: var(--text);
     transform: translateY(80px); opacity: 0;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    max-width: 280px;
+    max-width: 300px;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast-title { font-weight: 500; margin-bottom: 3px; }
   .toast-body { color: var(--muted); font-size: 0.68rem; }
 
-  /* EOD CARD */
+  /* ===== EOD CARD ===== */
   .eod-steps {
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
     margin-bottom: 16px;
@@ -257,19 +312,115 @@
   .eod-step-label { color: var(--muted); }
   .eod-step.checked .eod-step-label { color: var(--accent-stand); }
 
-  /* WIDE CARD - SIT/STAND takes full row */
+  /* ===== SIT/STAND WIDE ===== */
   .card-sitstand { grid-column: 1 / -1; }
 
-  /* Progress bar under sit/stand */
-  .pos-progress {
-    height: 4px; background: var(--border); border-radius: 2px;
-    margin-top: 12px; overflow: hidden;
+  /* ===== HYDRATION CARD ===== */
+  .water-tracker {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 16px;
   }
-  .pos-progress-fill {
-    height: 100%; border-radius: 2px;
-    background: var(--card-accent);
-    transition: width 1s linear;
+
+  .water-glasses {
+    display: flex; gap: 5px; flex-wrap: wrap; flex: 1;
   }
+
+  .water-glass {
+    width: 22px; height: 28px; border: 1.5px solid var(--border);
+    border-radius: 3px 3px 5px 5px; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+    background: var(--surface2);
+  }
+
+  .water-glass.filled {
+    border-color: var(--accent-hydration);
+    background: color-mix(in srgb, var(--accent-hydration) 25%, var(--surface2));
+  }
+
+  .water-glass::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 0; background: var(--accent-hydration);
+    transition: height 0.3s ease; opacity: 0.3;
+  }
+
+  .water-glass.filled::after { height: 100%; }
+
+  .water-count {
+    font-size: 1.4rem; color: var(--text); letter-spacing: -0.03em;
+    min-width: 40px; text-align: right;
+  }
+  .water-goal { font-size: 0.65rem; color: var(--muted); }
+
+  /* ===== FOCUS SESSION CARD ===== */
+  .focus-durations {
+    display: flex; gap: 6px; margin-bottom: 16px;
+  }
+
+  .focus-duration-btn {
+    flex: 1; padding: 7px 4px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 6px;
+    font-family: 'DM Mono', monospace; font-size: 0.65rem;
+    letter-spacing: 0.05em; color: var(--muted);
+    cursor: pointer; transition: all 0.2s; text-align: center;
+  }
+  .focus-duration-btn:hover { border-color: var(--accent-focus); color: var(--accent-focus); }
+  .focus-duration-btn.selected { background: color-mix(in srgb, var(--accent-focus) 20%, var(--surface2)); border-color: var(--accent-focus); color: var(--accent-focus); }
+
+  /* ===== SETTINGS MODAL ===== */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; padding: 28px; width: 420px; max-width: 90vw;
+    max-height: 80vh; overflow-y: auto;
+  }
+
+  .modal-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.3rem; font-weight: 400;
+  }
+
+  .modal-close {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; font-size: 1.2rem; padding: 2px 6px;
+    border-radius: 4px; transition: color 0.2s;
+  }
+  .modal-close:hover { color: var(--text); }
+
+  .setting-group { margin-bottom: 20px; }
+
+  .setting-group-title {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin-bottom: 12px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .setting-label { font-size: 0.72rem; color: var(--text); }
+  .setting-hint { font-size: 0.62rem; color: var(--muted); }
+
+  .setting-input {
+    font-family: 'DM Mono', monospace; font-size: 0.72rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 5px 10px;
+    width: 80px; text-align: center;
+    transition: border-color 0.2s;
+  }
+  .setting-input:focus { outline: none; border-color: var(--accent-focus); }
 
   /* Notification permission banner */
   .notif-banner {
@@ -280,12 +431,14 @@
   }
   .notif-banner.hidden { display: none; }
 
-  @media (max-width: 600px) {
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 620px) {
     .grid { grid-template-columns: 1fr; }
     .card-eod { grid-column: 1; }
     .card-sitstand { grid-column: 1; }
     .eod-steps { grid-template-columns: repeat(2, 1fr); }
     h1 { font-size: 1.5rem; }
+    .stats-bar { gap: 12px; }
   }
 </style>
 </head>
@@ -301,14 +454,53 @@
     <div class="clock" id="clock">--:--</div>
   </header>
 
+  <!-- DAILY STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-label">Today</span>
+      <span class="stat-value" id="statDate">—</span>
+    </div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">
+      <span class="stat-label">Breaks</span>
+      <span class="stat-value" id="statBreaks">0</span>
+    </div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">
+      <span class="stat-label">Water</span>
+      <span class="stat-value"><span id="statWater">0</span>/<span id="statWaterGoal">8</span> glasses</span>
+    </div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">
+      <span class="stat-label">Focus sessions</span>
+      <span class="stat-value" id="statFocus">0</span>
+    </div>
+    <div class="stats-actions">
+      <div class="streak-badge" id="streakBadge">🔥 <span id="streakCount">0</span> <span id="streakLabel">day</span> streak</div>
+      <button class="btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
+    </div>
+  </div>
+
+  <!-- FOCUS BANNER -->
+  <div class="focus-banner" id="focusBanner">
+    <span style="font-size: 1.2rem;">🎯</span>
+    <div>
+      <div class="focus-banner-label">Focus Session Active</div>
+      <div class="focus-banner-sub">Break reminders paused until session ends</div>
+    </div>
+    <div class="focus-banner-time" id="focusBannerTime">—</div>
+    <button class="btn" onclick="endFocusSession()" style="margin-left: auto; --card-accent: var(--accent-focus);">End Session</button>
+  </div>
+
+  <!-- NOTIFICATION PERMISSION BANNER -->
   <div class="notif-banner" id="notifBanner">
     <span>🔔</span>
-    <span style="flex:1; color: var(--muted)">Enable notifications to get reminded even when this tab isn't in focus.</span>
-    <button class="btn primary" onclick="requestNotifs()">Enable</button>
+    <span style="flex:1; color: var(--muted)">Enable notifications to get reminded even when the window isn't in focus.</span>
+    <button class="btn primary" onclick="requestNotifs()" style="--card-accent: var(--accent-focus);">Enable</button>
     <button class="btn" onclick="document.getElementById('notifBanner').classList.add('hidden')">Dismiss</button>
   </div>
 
-  <div class="grid">
+  <div class="grid" id="mainGrid">
 
     <!-- SIT/STAND TIMER -->
     <div class="card card-sitstand card-sit" id="sitstandCard" style="--card-accent: var(--accent-sit)">
@@ -345,8 +537,8 @@
           <button class="btn primary" id="sitstandStartBtn" onclick="toggleSitstand()">Start</button>
           <button class="btn" onclick="resetSitstand()">Reset</button>
         </div>
-        <div style="font-size: 0.65rem; color: var(--muted); margin-top: 8px;">
-          Sit 25 min → Stand 20 min → repeat
+        <div style="font-size: 0.65rem; color: var(--muted); margin-top: 8px;" id="sitstandHint">
+          Sit <span id="hintSit">25</span> min → Stand <span id="hintStand">20</span> min → repeat
         </div>
       </div>
     </div>
@@ -429,6 +621,29 @@
       </div>
     </div>
 
+    <!-- NECK STRETCHES -->
+    <div class="card card-neck" style="--card-accent: var(--accent-neck)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Neck & Upper Back</div>
+      <div class="card-title">Neck Stretches</div>
+      <div class="card-desc">Releases forward head posture. Do every 60–90 min at desk.</div>
+
+      <ul class="steps" id="neckSteps">
+        <li class="current"><span class="step-num">01</span>Ear to shoulder, left side — 15 sec</li>
+        <li><span class="step-num">02</span>Ear to shoulder, right side — 15 sec</li>
+        <li><span class="step-num">03</span>Chin tuck: draw chin straight back — 10 reps</li>
+        <li><span class="step-num">04</span>Slow neck rolls, both directions — 30 sec</li>
+        <li><span class="step-num">05</span>Shoulder shrug up, hold, release — 5 reps</li>
+      </ul>
+
+      <div style="margin-top: 12px;">
+        <div class="btn-row">
+          <button class="btn primary" id="neckStartBtn" onclick="startNeckRoutine()">Start Routine</button>
+          <button class="btn" onclick="resetNeckRoutine()">Reset</button>
+        </div>
+      </div>
+    </div>
+
     <!-- WALK REMINDER -->
     <div class="card card-walk" style="--card-accent: var(--accent-walk)">
       <div class="card-accent-bar"></div>
@@ -453,6 +668,76 @@
       <div class="btn-row">
         <button class="btn primary" id="walkStartBtn" onclick="toggleTimer('walk')">Start</button>
         <button class="btn" onclick="resetTimer('walk')">Reset</button>
+      </div>
+    </div>
+
+    <!-- HYDRATION TRACKER -->
+    <div class="card card-hydration" style="--card-accent: var(--accent-hydration)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Hydration</div>
+      <div class="card-title">Water Intake</div>
+      <div class="card-desc">Aim for 8 glasses today. Dehydration reduces focus by up to 20%.</div>
+
+      <div class="water-tracker">
+        <div class="water-glasses" id="waterGlasses"></div>
+        <div style="text-align: right;">
+          <div class="water-count"><span id="waterCount">0</span></div>
+          <div class="water-goal">of 8 glasses</div>
+        </div>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="hydrationRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="hydrationRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="hydrationCountdown">30:00</div>
+          <div class="timer-label" id="hydrationStatus">Drink reminder</div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn primary" onclick="addWaterGlass()" style="--card-accent: var(--accent-hydration);">+ Drank a glass</button>
+        <button class="btn" id="hydrationStartBtn" onclick="toggleTimer('hydration')">Start reminder</button>
+        <button class="btn" onclick="resetWater()">Reset</button>
+      </div>
+    </div>
+
+    <!-- FOCUS SESSION -->
+    <div class="card card-focus" style="--card-accent: var(--accent-focus)">
+      <div class="card-accent-bar"></div>
+      <div class="card-label">Deep Work</div>
+      <div class="card-title">Focus Session</div>
+      <div class="card-desc">Pauses all break reminders so you can work without interruption.</div>
+
+      <div class="focus-durations">
+        <div class="focus-duration-btn selected" onclick="selectFocusDuration(25, this)">25 min<br><span style="font-size: 0.55rem; color: var(--muted);">Pomodoro</span></div>
+        <div class="focus-duration-btn" onclick="selectFocusDuration(50, this)">50 min<br><span style="font-size: 0.55rem; color: var(--muted);">Deep work</span></div>
+        <div class="focus-duration-btn" onclick="selectFocusDuration(90, this)">90 min<br><span style="font-size: 0.55rem; color: var(--muted);">Flow state</span></div>
+      </div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="focusRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="focusRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="focusCountdown">25:00</div>
+          <div class="timer-label" id="focusStatus">Select duration above</div>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn primary" id="focusStartBtn" onclick="toggleFocusSession()">Start Focus</button>
+        <button class="btn" onclick="resetFocusSession()">Reset</button>
       </div>
     </div>
 
@@ -530,7 +815,199 @@
   <div class="toast-body" id="toastBody"></div>
 </div>
 
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal" onclick="closeSettingsOnOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Settings</div>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-title">Sit / Stand Timer</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Sit duration</div>
+          <div class="setting-hint">minutes</div>
+        </div>
+        <input type="number" class="setting-input" id="setSit" value="25" min="5" max="120">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Stand duration</div>
+          <div class="setting-hint">minutes</div>
+        </div>
+        <input type="number" class="setting-input" id="setStand" value="20" min="5" max="60">
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-title">Break Reminders</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Eye break (20-20-20)</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setEyes" value="20" min="5" max="60">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Shoulder check-in</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setShoulder" value="45" min="10" max="120">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Walk break</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setWalk" value="90" min="30" max="240">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Hydration reminder</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setHydration" value="30" min="15" max="90">
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-title">Hydration Goal</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Daily water goal</div>
+          <div class="setting-hint">glasses (8 oz each)</div>
+        </div>
+        <input type="number" class="setting-input" id="setWaterGoal" value="8" min="4" max="16">
+      </div>
+    </div>
+
+    <div class="btn-row" style="justify-content: flex-end; margin-top: 8px;">
+      <button class="btn" onclick="resetSettings()">Restore Defaults</button>
+      <button class="btn primary" onclick="applySettings()" style="--card-accent: var(--accent-focus);">Apply Settings</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// ===== STORAGE HELPERS =====
+const TODAY = new Date().toISOString().split('T')[0];
+
+// ===== SHARED STATE (declared here to avoid TDZ in any order of calls) =====
+let dailyBreaks = 0, dailyFocus = 0;
+let waterCount = 0, waterGoal = 8;
+let focusActive = false;
+let focusDuration = 25 * 60;
+let focusRemaining = 25 * 60;
+let focusInterval = null;
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('deskWellness');
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+
+function saveState(patch) {
+  try {
+    const state = loadState();
+    localStorage.setItem('deskWellness', JSON.stringify({ ...state, ...patch }));
+  } catch {}
+}
+
+// ===== SETTINGS =====
+const DEFAULTS = {
+  sitDuration: 25, standDuration: 20,
+  eyesDuration: 20, shoulderDuration: 45,
+  walkDuration: 90, hydrationDuration: 30,
+  waterGoal: 8
+};
+
+function getSettings() {
+  const s = loadState();
+  return { ...DEFAULTS, ...(s.settings || {}) };
+}
+
+function openSettings() {
+  const cfg = getSettings();
+  document.getElementById('setSit').value = cfg.sitDuration;
+  document.getElementById('setStand').value = cfg.standDuration;
+  document.getElementById('setEyes').value = cfg.eyesDuration;
+  document.getElementById('setShoulder').value = cfg.shoulderDuration;
+  document.getElementById('setWalk').value = cfg.walkDuration;
+  document.getElementById('setHydration').value = cfg.hydrationDuration;
+  document.getElementById('setWaterGoal').value = cfg.waterGoal;
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function closeSettingsOnOverlay(e) {
+  if (e.target === document.getElementById('settingsModal')) closeSettings();
+}
+
+function resetSettings() {
+  const cfg = DEFAULTS;
+  document.getElementById('setSit').value = cfg.sitDuration;
+  document.getElementById('setStand').value = cfg.standDuration;
+  document.getElementById('setEyes').value = cfg.eyesDuration;
+  document.getElementById('setShoulder').value = cfg.shoulderDuration;
+  document.getElementById('setWalk').value = cfg.walkDuration;
+  document.getElementById('setHydration').value = cfg.hydrationDuration;
+  document.getElementById('setWaterGoal').value = cfg.waterGoal;
+}
+
+function applySettings() {
+  const cfg = {
+    sitDuration:       Math.max(5,  Math.min(120, parseInt(document.getElementById('setSit').value) || 25)),
+    standDuration:     Math.max(5,  Math.min(60,  parseInt(document.getElementById('setStand').value) || 20)),
+    eyesDuration:      Math.max(5,  Math.min(60,  parseInt(document.getElementById('setEyes').value) || 20)),
+    shoulderDuration:  Math.max(10, Math.min(120, parseInt(document.getElementById('setShoulder').value) || 45)),
+    walkDuration:      Math.max(30, Math.min(240, parseInt(document.getElementById('setWalk').value) || 90)),
+    hydrationDuration: Math.max(15, Math.min(90,  parseInt(document.getElementById('setHydration').value) || 30)),
+    waterGoal:         Math.max(4,  Math.min(16,  parseInt(document.getElementById('setWaterGoal').value) || 8)),
+  };
+  saveState({ settings: cfg });
+
+  // Apply to active timers
+  timers.eyes.duration = cfg.eyesDuration * 60;
+  timers.shoulder.duration = cfg.shoulderDuration * 60;
+  timers.walk.duration = cfg.walkDuration * 60;
+  timers.hydration.duration = cfg.hydrationDuration * 60;
+  SS.durations.sit = cfg.sitDuration * 60;
+  SS.durations.stand = cfg.standDuration * 60;
+
+  // Update hint text
+  document.getElementById('hintSit').textContent = cfg.sitDuration;
+  document.getElementById('hintStand').textContent = cfg.standDuration;
+
+  // Update water goal
+  waterGoal = cfg.waterGoal;
+  renderWaterGlasses();
+
+  // Reset timers that aren't running to reflect new durations
+  ['eyes', 'shoulder', 'walk', 'hydration'].forEach(k => {
+    const t = timers[k];
+    if (!t.running) {
+      t.remaining = t.duration;
+      document.getElementById(t.countdownId).textContent = fmt(t.duration);
+      updateRing(t, t.duration, t.duration);
+    }
+  });
+  if (!SS.running) {
+    SS.remaining = SS.durations[SS.mode];
+    document.getElementById('sitstandCountdown').textContent = fmt(SS.remaining);
+    updateSSRing();
+  }
+
+  closeSettings();
+  showToast('Settings applied', 'Timer durations updated.');
+}
+
 // ===== CLOCK =====
 function updateClock() {
   const now = new Date();
@@ -540,13 +1017,82 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+// ===== DAILY STATS =====
+
+function loadDailyStats() {
+  const s = loadState();
+  if (s.statsDate !== TODAY) {
+    // New day — reset daily counters
+    saveState({ statsDate: TODAY, dailyBreaks: 0, dailyFocus: 0, dailyWater: 0 });
+    dailyBreaks = 0; dailyFocus = 0;
+    waterCount = 0;
+  } else {
+    dailyBreaks = s.dailyBreaks || 0;
+    dailyFocus  = s.dailyFocus  || 0;
+    waterCount  = s.dailyWater  || 0;
+  }
+  updateStatsBar();
+}
+
+function updateStatsBar() {
+  const d = new Date();
+  document.getElementById('statDate').textContent =
+    d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  document.getElementById('statBreaks').textContent = dailyBreaks;
+  document.getElementById('statWater').textContent = waterCount;
+  document.getElementById('statFocus').textContent = dailyFocus;
+}
+
+function incrementBreaks() {
+  dailyBreaks++;
+  saveState({ dailyBreaks });
+  updateStatsBar();
+}
+
+function incrementFocus() {
+  dailyFocus++;
+  saveState({ dailyFocus });
+  updateStatsBar();
+}
+
+// ===== STREAK TRACKING =====
+function loadStreak() {
+  const s = loadState();
+  const streak = s.streak || 0;
+  const lastActiveDate = s.lastActiveDate || null;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  let currentStreak = streak;
+  if (lastActiveDate === TODAY) {
+    // Already updated today
+    currentStreak = streak;
+  } else if (lastActiveDate === yesterdayStr) {
+    // Continuing streak
+    currentStreak = streak + 1;
+    saveState({ streak: currentStreak, lastActiveDate: TODAY });
+  } else if (lastActiveDate === null) {
+    // First time
+    currentStreak = 1;
+    saveState({ streak: 1, lastActiveDate: TODAY });
+  } else {
+    // Streak broken
+    currentStreak = 1;
+    saveState({ streak: 1, lastActiveDate: TODAY });
+  }
+
+  document.getElementById('streakCount').textContent = currentStreak;
+  document.getElementById('streakLabel').textContent = currentStreak === 1 ? 'day' : 'days';
+}
+
 // ===== NOTIFICATIONS =====
 function requestNotifs() {
   if ('Notification' in window) {
     Notification.requestPermission().then(p => {
       if (p === 'granted') {
         document.getElementById('notifBanner').classList.add('hidden');
-        showToast('Notifications enabled', 'You\'ll be alerted even when tab is inactive.');
+        showToast('Notifications enabled', "You'll be alerted even when the window is minimized.");
       }
     });
   }
@@ -557,10 +1103,12 @@ if ('Notification' in window && Notification.permission === 'granted') {
 }
 
 function notify(title, body) {
-  if ('Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, { body, icon: '' });
+  if (!focusActive) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body });
+    }
+    showToast(title, body);
   }
-  showToast(title, body);
 }
 
 // ===== TOAST =====
@@ -571,23 +1119,27 @@ function showToast(title, body) {
   document.getElementById('toastBody').textContent = body;
   t.classList.add('show');
   clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => t.classList.remove('show'), 4000);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 4500);
 }
 
 // ===== GENERIC TIMER ENGINE =====
 const timers = {
-  eyes:     { duration: 20*60, remaining: 20*60, interval: null, running: false,
-              ringId: 'eyesRing', ringTextId: 'eyesRingText',
-              countdownId: 'eyesCountdown', statusId: 'eyesStatus', btnId: 'eyesStartBtn',
-              alertTitle: '👁 Eye Break!', alertBody: 'Look 20 ft away for 20 seconds.' },
-  shoulder: { duration: 45*60, remaining: 45*60, interval: null, running: false,
-              ringId: 'shoulderRing', ringTextId: 'shoulderRingText',
-              countdownId: 'shoulderCountdown', statusId: 'shoulderStatus', btnId: 'shoulderStartBtn',
-              alertTitle: '💆 Shoulder Check!', alertBody: 'Drop your shoulders. Roll them back.' },
-  walk:     { duration: 90*60, remaining: 90*60, interval: null, running: false,
-              ringId: 'walkRing', ringTextId: 'walkRingText',
-              countdownId: 'walkCountdown', statusId: 'walkStatus', btnId: 'walkStartBtn',
-              alertTitle: '🚶 Walk Time!', alertBody: 'Step outside. Even 10 minutes helps.' },
+  eyes:       { duration: 20*60, remaining: 20*60, interval: null, running: false,
+                ringId: 'eyesRing', ringTextId: 'eyesRingText',
+                countdownId: 'eyesCountdown', statusId: 'eyesStatus', btnId: 'eyesStartBtn',
+                alertTitle: '👁 Eye Break!', alertBody: 'Look 20 ft away for 20 seconds.' },
+  shoulder:   { duration: 45*60, remaining: 45*60, interval: null, running: false,
+                ringId: 'shoulderRing', ringTextId: 'shoulderRingText',
+                countdownId: 'shoulderCountdown', statusId: 'shoulderStatus', btnId: 'shoulderStartBtn',
+                alertTitle: '💆 Shoulder Check!', alertBody: 'Drop your shoulders. Roll them back.' },
+  walk:       { duration: 90*60, remaining: 90*60, interval: null, running: false,
+                ringId: 'walkRing', ringTextId: 'walkRingText',
+                countdownId: 'walkCountdown', statusId: 'walkStatus', btnId: 'walkStartBtn',
+                alertTitle: '🚶 Walk Time!', alertBody: 'Step outside. Even 10 minutes helps.' },
+  hydration:  { duration: 30*60, remaining: 30*60, interval: null, running: false,
+                ringId: 'hydrationRing', ringTextId: 'hydrationRingText',
+                countdownId: 'hydrationCountdown', statusId: 'hydrationStatus', btnId: 'hydrationStartBtn',
+                alertTitle: '💧 Drink Water!', alertBody: "Stay hydrated — your brain is 75% water." },
 };
 
 function fmt(s) {
@@ -608,7 +1160,7 @@ function toggleTimer(key) {
   const t = timers[key];
   if (t.running) {
     clearInterval(t.interval); t.running = false;
-    document.getElementById(t.btnId).textContent = 'Resume';
+    document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Resume reminder' : 'Resume';
     document.getElementById(t.statusId).textContent = 'Paused';
   } else {
     t.running = true;
@@ -621,9 +1173,10 @@ function toggleTimer(key) {
       if (t.remaining <= 0) {
         clearInterval(t.interval); t.running = false;
         notify(t.alertTitle, t.alertBody);
+        incrementBreaks();
         document.getElementById(t.countdownId).textContent = fmt(t.duration);
         document.getElementById(t.statusId).textContent = '✓ Done — restarting';
-        document.getElementById(t.btnId).textContent = 'Start';
+        document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
         t.remaining = t.duration;
         updateRing(t, t.remaining, t.duration);
       }
@@ -636,8 +1189,8 @@ function resetTimer(key) {
   clearInterval(t.interval); t.running = false;
   t.remaining = t.duration;
   document.getElementById(t.countdownId).textContent = fmt(t.duration);
-  document.getElementById(t.statusId).textContent = 'Ready to start';
-  document.getElementById(t.btnId).textContent = 'Start';
+  document.getElementById(t.statusId).textContent = key === 'hydration' ? 'Drink reminder' : 'Ready to start';
+  document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
   updateRing(t, t.duration, t.duration);
 }
 
@@ -648,7 +1201,7 @@ function snoozeTimer(key, mins) {
 
 // ===== SIT/STAND TIMER =====
 const SS = {
-  mode: 'sit', // 'sit' or 'stand'
+  mode: 'sit',
   durations: { sit: 25*60, stand: 20*60 },
   remaining: 25*60,
   running: false,
@@ -697,6 +1250,7 @@ function toggleSitstand() {
         const next = SS.mode === 'sit' ? 'stand' : 'sit';
         const msg = next === 'stand' ? 'Time to stand up!' : 'Time to sit down.';
         notify('⏱ Position Change', msg);
+        incrementBreaks();
         document.getElementById('sitstandStartBtn').textContent = 'Start';
         setMode(next);
       }
@@ -711,24 +1265,24 @@ function resetSitstand() {
 }
 
 // ===== WRIST ROUTINE =====
-const wristDurations = [15, 15, 12, 12, 20]; // approx seconds per step
+const wristDurations = [15, 15, 12, 12, 20];
 let wristStep = 0, wristInterval = null, wristRunning = false, wristRemaining = 0;
 
 function startWristRoutine() {
   if (wristRunning) return;
-  wristRunning = true;
-  wristStep = 0;
+  wristRunning = true; wristStep = 0;
   document.getElementById('wristStartBtn').textContent = 'Running...';
   document.getElementById('wristStartBtn').disabled = true;
   runWristStep();
 }
 
 function runWristStep() {
-  if (wristStep >= 5) {
+  if (wristStep >= wristDurations.length) {
     wristRunning = false;
     document.getElementById('wristStartBtn').textContent = 'Done ✓';
     document.getElementById('wristStartBtn').disabled = false;
     showToast('Wrist routine complete ✓', 'Nice work. Repeat hourly.');
+    incrementBreaks();
     return;
   }
   updateWristHighlight();
@@ -744,8 +1298,7 @@ function runWristStep() {
 }
 
 function updateWristHighlight() {
-  const items = document.querySelectorAll('#wristSteps li');
-  items.forEach((li, i) => {
+  document.querySelectorAll('#wristSteps li').forEach((li, i) => {
     li.className = i < wristStep ? 'done' : i === wristStep ? 'current' : '';
   });
 }
@@ -755,9 +1308,172 @@ function resetWristRoutine() {
   wristRunning = false; wristStep = 0; wristRemaining = 0;
   document.getElementById('wristStartBtn').textContent = 'Start Routine';
   document.getElementById('wristStartBtn').disabled = false;
-  updateWristHighlight();
-  const items = document.querySelectorAll('#wristSteps li');
-  items.forEach((li, i) => { li.className = i === 0 ? 'current' : ''; });
+  document.querySelectorAll('#wristSteps li').forEach((li, i) => {
+    li.className = i === 0 ? 'current' : '';
+  });
+}
+
+// ===== NECK ROUTINE =====
+const neckDurations = [15, 15, 20, 30, 15];
+let neckStep = 0, neckInterval = null, neckRunning = false, neckRemaining = 0;
+
+function startNeckRoutine() {
+  if (neckRunning) return;
+  neckRunning = true; neckStep = 0;
+  document.getElementById('neckStartBtn').textContent = 'Running...';
+  document.getElementById('neckStartBtn').disabled = true;
+  runNeckStep();
+}
+
+function runNeckStep() {
+  if (neckStep >= neckDurations.length) {
+    neckRunning = false;
+    document.getElementById('neckStartBtn').textContent = 'Done ✓';
+    document.getElementById('neckStartBtn').disabled = false;
+    showToast('Neck routine complete ✓', 'Forward head posture relieved.');
+    incrementBreaks();
+    return;
+  }
+  updateNeckHighlight();
+  neckRemaining = neckDurations[neckStep];
+  neckInterval = setInterval(() => {
+    neckRemaining--;
+    if (neckRemaining <= 0) {
+      clearInterval(neckInterval);
+      neckStep++;
+      runNeckStep();
+    }
+  }, 1000);
+}
+
+function updateNeckHighlight() {
+  document.querySelectorAll('#neckSteps li').forEach((li, i) => {
+    li.className = i < neckStep ? 'done' : i === neckStep ? 'current' : '';
+  });
+}
+
+function resetNeckRoutine() {
+  clearInterval(neckInterval);
+  neckRunning = false; neckStep = 0; neckRemaining = 0;
+  document.getElementById('neckStartBtn').textContent = 'Start Routine';
+  document.getElementById('neckStartBtn').disabled = false;
+  document.querySelectorAll('#neckSteps li').forEach((li, i) => {
+    li.className = i === 0 ? 'current' : '';
+  });
+}
+
+// ===== HYDRATION TRACKER =====
+
+function renderWaterGlasses() {
+  const container = document.getElementById('waterGlasses');
+  const cfg = getSettings();
+  waterGoal = cfg.waterGoal;
+  container.innerHTML = '';
+  for (let i = 0; i < waterGoal; i++) {
+    const g = document.createElement('div');
+    g.className = 'water-glass' + (i < waterCount ? ' filled' : '');
+    g.title = `Glass ${i + 1}`;
+    g.onclick = () => setWaterCount(i < waterCount ? i : i + 1);
+    container.appendChild(g);
+  }
+  document.getElementById('waterCount').textContent = waterCount;
+  document.getElementById('statWater').textContent = waterCount;
+  document.getElementById('statWaterGoal').textContent = waterGoal;
+}
+
+function setWaterCount(n) {
+  waterCount = Math.max(0, Math.min(waterGoal, n));
+  saveState({ dailyWater: waterCount });
+  renderWaterGlasses();
+  if (waterCount === waterGoal) {
+    showToast('Hydration goal reached! 💧', `${waterGoal} glasses today — excellent.`);
+  }
+}
+
+function addWaterGlass() {
+  if (waterCount < waterGoal) {
+    setWaterCount(waterCount + 1);
+    showToast('Water logged', `${waterCount} of ${waterGoal} glasses today.`);
+  } else {
+    showToast('Goal already reached!', `${waterGoal} glasses today. Great work.`);
+  }
+}
+
+function resetWater() {
+  setWaterCount(0);
+}
+
+// ===== FOCUS SESSION =====
+
+function selectFocusDuration(mins, el) {
+  focusDuration = mins * 60;
+  focusRemaining = focusDuration;
+  document.getElementById('focusCountdown').textContent = fmt(focusRemaining);
+  document.getElementById('focusStatus').textContent = 'Select duration above';
+  updateFocusRing();
+  document.querySelectorAll('.focus-duration-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function updateFocusRing() {
+  const circ = 176;
+  const pct = focusRemaining / focusDuration;
+  const offset = circ * (1 - pct);
+  document.getElementById('focusRing').style.strokeDashoffset = offset;
+  const mins = Math.ceil(focusRemaining / 60);
+  document.getElementById('focusRingText').textContent = mins + 'm';
+}
+
+function toggleFocusSession() {
+  if (focusActive) {
+    clearInterval(focusInterval); focusActive = false;
+    document.getElementById('focusStartBtn').textContent = 'Resume Focus';
+    document.getElementById('focusStatus').textContent = 'Paused';
+    document.getElementById('focusBanner').classList.remove('active');
+    applyFocusMode(false);
+  } else {
+    focusActive = true;
+    document.getElementById('focusStartBtn').textContent = 'Pause';
+    document.getElementById('focusStatus').textContent = 'Focus active — reminders paused';
+    document.getElementById('focusBanner').classList.add('active');
+    applyFocusMode(true);
+    focusInterval = setInterval(() => {
+      focusRemaining--;
+      document.getElementById('focusCountdown').textContent = fmt(focusRemaining);
+      document.getElementById('focusBannerTime').textContent = fmt(focusRemaining);
+      updateFocusRing();
+      if (focusRemaining <= 0) {
+        endFocusSession();
+        notify('🎯 Focus Session Complete!', 'Great work. Take a break — your reminders are back on.');
+        incrementFocus();
+      }
+    }, 1000);
+  }
+}
+
+function endFocusSession() {
+  clearInterval(focusInterval); focusActive = false;
+  focusRemaining = focusDuration;
+  document.getElementById('focusStartBtn').textContent = 'Start Focus';
+  document.getElementById('focusStatus').textContent = 'Session ended';
+  document.getElementById('focusCountdown').textContent = fmt(focusDuration);
+  document.getElementById('focusBanner').classList.remove('active');
+  document.getElementById('focusBannerTime').textContent = '—';
+  applyFocusMode(false);
+  updateFocusRing();
+}
+
+function resetFocusSession() {
+  endFocusSession();
+  document.getElementById('focusStatus').textContent = 'Select duration above';
+  document.getElementById('focusStartBtn').textContent = 'Start Focus';
+}
+
+function applyFocusMode(active) {
+  const pausableCards = document.querySelectorAll('.card-eyes, .card-shoulder, .card-walk, .card-hydration');
+  pausableCards.forEach(card => {
+    card.classList.toggle('focus-paused', active);
+  });
 }
 
 // ===== PHYSIOLOGICAL SIGH =====
@@ -781,6 +1497,7 @@ function runBreathPhase() {
   if (breathRound >= 3) {
     stopBreath();
     showToast('Sigh complete ✓', 'Nervous system reset. You got this.');
+    incrementBreaks();
     return;
   }
   const phase = breathPhases[breathPhaseIdx];
@@ -799,8 +1516,7 @@ function runBreathPhase() {
 }
 
 function stopBreath() {
-  clearTimeout(breathTimeout);
-  breathActive = false;
+  clearTimeout(breathTimeout); breathActive = false;
   breathPhaseIdx = 0; breathRound = 0;
   const circle = document.getElementById('breathCircle');
   circle.className = 'breath-circle';
@@ -810,7 +1526,19 @@ function stopBreath() {
 }
 
 // ===== EOD CHECKLIST =====
-const eodChecked = [false,false,false,false,false,false];
+let eodChecked = [false,false,false,false,false,false];
+
+function loadEodState() {
+  const s = loadState();
+  if (s.eodDate === TODAY && Array.isArray(s.eodChecked)) {
+    eodChecked = s.eodChecked;
+    document.querySelectorAll('.eod-step').forEach((el, i) => {
+      el.classList.toggle('checked', eodChecked[i]);
+    });
+    const done = eodChecked.filter(Boolean).length;
+    document.getElementById('eodProgress').textContent = `${done} of 6 complete`;
+  }
+}
 
 function toggleEod(idx) {
   eodChecked[idx] = !eodChecked[idx];
@@ -818,8 +1546,9 @@ function toggleEod(idx) {
   steps[idx].classList.toggle('checked', eodChecked[idx]);
   const done = eodChecked.filter(Boolean).length;
   document.getElementById('eodProgress').textContent = `${done} of 6 complete`;
+  saveState({ eodChecked, eodDate: TODAY });
   if (done === 6) {
-    showToast('Workday closed ✓', 'Great shutdown. Enjoy your evening, Eddie.');
+    showToast('Workday closed ✓', 'Great shutdown. Enjoy your evening!');
   }
 }
 
@@ -827,11 +1556,41 @@ function resetEod() {
   eodChecked.fill(false);
   document.querySelectorAll('.eod-step').forEach(s => s.classList.remove('checked'));
   document.getElementById('eodProgress').textContent = '0 of 6 complete';
+  saveState({ eodChecked: eodChecked, eodDate: TODAY });
 }
 
-// Init rings
+// ===== INIT =====
 Object.keys(timers).forEach(k => updateRing(timers[k], timers[k].duration, timers[k].duration));
 updateSSRing();
+updateFocusRing();
+
+// Load settings and apply durations
+(function initSettings() {
+  const cfg = getSettings();
+  timers.eyes.duration = timers.eyes.remaining = cfg.eyesDuration * 60;
+  timers.shoulder.duration = timers.shoulder.remaining = cfg.shoulderDuration * 60;
+  timers.walk.duration = timers.walk.remaining = cfg.walkDuration * 60;
+  timers.hydration.duration = timers.hydration.remaining = cfg.hydrationDuration * 60;
+  SS.durations.sit = cfg.sitDuration * 60;
+  SS.durations.stand = cfg.standDuration * 60;
+  SS.remaining = SS.durations.sit;
+
+  document.getElementById('hintSit').textContent = cfg.sitDuration;
+  document.getElementById('hintStand').textContent = cfg.standDuration;
+
+  Object.keys(timers).forEach(k => {
+    document.getElementById(timers[k].countdownId).textContent = fmt(timers[k].duration);
+    updateRing(timers[k], timers[k].duration, timers[k].duration);
+  });
+  document.getElementById('sitstandCountdown').textContent = fmt(SS.remaining);
+  updateSSRing();
+})();
+
+// Load daily state
+loadDailyStats();
+loadStreak();
+loadEodState();
+renderWaterGlasses();
 </script>
 </body>
 </html>
