@@ -33,8 +33,32 @@
     color: var(--text);
     font-family: 'DM Mono', monospace;
     min-height: 100vh;
-    padding: 24px;
+    padding: 60px 24px 24px;
     line-height: 1.5;
+  }
+
+  /* ===== TITLE BAR ===== */
+  .app-titlebar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 36px;
+    -webkit-app-region: drag;
+    background: color-mix(in srgb, var(--bg) 95%, var(--surface));
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    user-select: none;
+  }
+
+  .app-titlebar-name {
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    /* offset right of macOS traffic lights */
+    padding-left: 76px;
   }
 
   .noise {
@@ -527,6 +551,9 @@
 </style>
 </head>
 <body>
+<div class="app-titlebar">
+  <span class="app-titlebar-name">Desk Wellness</span>
+</div>
 <div class="noise"></div>
 <div class="app">
 
@@ -1424,19 +1451,19 @@ const timers = {
                 countdownId: 'wristCountdown', statusId: 'wristTimerStatus', btnId: 'wristTimerBtn',
                 alertTitle: '🤲 Wrist Stretch Time!', alertBody: 'Quick 90-second routine for your wrists and hands.',
                 isReminder: true, defaultStatus: 'Routine reminder',
-                onComplete() { startWristRoutine(); } },
+                completedStatus: 'Do the routine below ↓' },
   neck:       { duration: 60*60, remaining: 60*60, interval: null, running: false,
                 ringId: 'neckRing', ringTextId: 'neckRingText',
                 countdownId: 'neckCountdown', statusId: 'neckTimerStatus', btnId: 'neckTimerBtn',
                 alertTitle: '🧘 Neck Stretch Time!', alertBody: 'Relieve forward head posture. Takes ~90 seconds.',
                 isReminder: true, defaultStatus: 'Routine reminder',
-                onComplete() { startNeckRoutine(); } },
+                completedStatus: 'Do the routine below ↓' },
   breath:     { duration: 90*60, remaining: 90*60, interval: null, running: false,
                 ringId: 'breathRing', ringTextId: 'breathRingText',
                 countdownId: 'breathCountdown', statusId: 'breathTimerStatus', btnId: 'breathTimerBtn',
                 alertTitle: '🫁 Breathing Break', alertBody: 'Take 3 physiological sighs to reset stress now.',
                 isReminder: true, defaultStatus: 'Routine reminder',
-                onComplete() { startBreath(); } },
+                completedStatus: 'Do the exercise below ↓' },
 };
 
 function fmt(s) {
@@ -1509,7 +1536,7 @@ function toggleTimer(key) {
         if (t.onComplete) t.onComplete();
         incrementBreaks();
         document.getElementById(t.countdownId).textContent = fmt(t.duration);
-        document.getElementById(t.statusId).textContent = '✓ Done — restarting';
+        document.getElementById(t.statusId).textContent = t.completedStatus || '✓ Done — restarting';
         document.getElementById(t.btnId).textContent = t.isReminder ? 'Start reminder' : 'Start';
         t.remaining = t.duration;
         updateRing(t, t.remaining, t.duration);
@@ -1623,8 +1650,9 @@ function runWristStep() {
     wristRunning = false;
     document.getElementById('wristStartBtn').textContent = 'Done ✓';
     document.getElementById('wristStartBtn').disabled = false;
-    showToast('Wrist routine complete ✓', 'Nice work. Repeat hourly.');
+    showToast('Wrist routine complete ✓', 'Nice work — reminder timer restarted.');
     incrementBreaks();
+    if (!timers.wrist.running) toggleTimer('wrist');
     return;
   }
   updateWristHighlight();
@@ -1672,8 +1700,9 @@ function runNeckStep() {
     neckRunning = false;
     document.getElementById('neckStartBtn').textContent = 'Done ✓';
     document.getElementById('neckStartBtn').disabled = false;
-    showToast('Neck routine complete ✓', 'Forward head posture relieved.');
+    showToast('Neck routine complete ✓', 'Forward head posture relieved — reminder timer restarted.');
     incrementBreaks();
+    if (!timers.neck.running) toggleTimer('neck');
     return;
   }
   updateNeckHighlight();
@@ -1838,8 +1867,9 @@ function startBreath() {
 function runBreathPhase() {
   if (breathRound >= 3) {
     stopBreath();
-    showToast('Sigh complete ✓', 'Nervous system reset. You got this.');
+    showToast('Sigh complete ✓', 'Nervous system reset. Reminder timer restarted.');
     incrementBreaks();
+    if (!timers.breath.running) toggleTimer('breath');
     return;
   }
   const phase = breathPhases[breathPhaseIdx];
