@@ -33,8 +33,32 @@
     color: var(--text);
     font-family: 'DM Mono', monospace;
     min-height: 100vh;
-    padding: 24px;
+    padding: 60px 24px 24px;
     line-height: 1.5;
+  }
+
+  /* ===== TITLE BAR ===== */
+  .app-titlebar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 36px;
+    -webkit-app-region: drag;
+    background: color-mix(in srgb, var(--bg) 95%, var(--surface));
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    user-select: none;
+  }
+
+  .app-titlebar-name {
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    /* offset right of macOS traffic lights */
+    padding-left: 76px;
   }
 
   .noise {
@@ -440,9 +464,96 @@
     h1 { font-size: 1.5rem; }
     .stats-bar { gap: 12px; }
   }
+
+  /* ===== ANALYTICS MODAL ===== */
+  .analytics-section { margin-bottom: 24px; }
+
+  .analytics-section-title {
+    font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin-bottom: 14px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  }
+
+  .chart-wrap {
+    display: flex; align-items: flex-end; gap: 6px;
+    height: 80px; margin-bottom: 6px;
+  }
+
+  .chart-col {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; height: 100%;
+  }
+
+  .chart-bar-wrap {
+    flex: 1; display: flex; align-items: flex-end;
+    width: 100%; min-width: 0;
+  }
+
+  .chart-bar {
+    width: 100%; border-radius: 3px 3px 0 0;
+    min-height: 2px; transition: height 0.4s ease;
+  }
+
+  .chart-label {
+    font-size: 0.55rem; color: var(--muted);
+    text-align: center; white-space: nowrap;
+  }
+
+  .chart-val {
+    font-size: 0.6rem; font-weight: 500; color: var(--text);
+    text-align: center;
+  }
+
+  .chart-today .chart-bar { opacity: 1; }
+  .chart-col:not(.chart-today) .chart-bar { opacity: 0.6; }
+  .chart-today .chart-label { color: var(--text); font-weight: 500; }
+
+  .analytics-summary {
+    display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px;
+  }
+
+  .analytics-stat {
+    flex: 1; min-width: 80px; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; text-align: center;
+  }
+
+  .analytics-stat-val {
+    font-size: 1.2rem; color: var(--text);
+    letter-spacing: -0.03em; margin-bottom: 2px;
+  }
+
+  .analytics-stat-label {
+    font-size: 0.58rem; text-transform: uppercase;
+    letter-spacing: 0.1em; color: var(--muted);
+  }
+
+  /* ===== IDLE BANNER ===== */
+  .idle-banner {
+    display: none; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    background: color-mix(in srgb, var(--muted) 8%, var(--surface));
+    border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 20px; font-size: 0.72rem;
+  }
+  .idle-banner.active { display: flex; }
+  .idle-banner-label { color: var(--muted); }
+
+  /* ===== SOUND BADGE ===== */
+  .sound-toggle {
+    font-size: 0.65rem; padding: 4px 8px; cursor: pointer;
+    background: none; border: 1px solid var(--border);
+    border-radius: 6px; color: var(--muted);
+    font-family: 'DM Mono', monospace; transition: all 0.2s;
+  }
+  .sound-toggle:hover { border-color: var(--text); color: var(--text); }
+  .sound-toggle.muted { opacity: 0.45; }
 </style>
 </head>
 <body>
+<div class="app-titlebar">
+  <span class="app-titlebar-name">Desk Wellness</span>
+</div>
 <div class="noise"></div>
 <div class="app">
 
@@ -475,10 +586,25 @@
       <span class="stat-label">Focus sessions</span>
       <span class="stat-value" id="statFocus">0</span>
     </div>
+    <span class="stat-sep">·</span>
+    <div class="stat-item">
+      <span class="stat-label">At desk</span>
+      <span class="stat-value" id="statDesk">0h 0m</span>
+    </div>
     <div class="stats-actions">
       <div class="streak-badge" id="streakBadge">🔥 <span id="streakCount">0</span> <span id="streakLabel">day</span> streak</div>
+      <button class="btn sound-toggle" id="soundToggleBtn" onclick="toggleSound()" title="Toggle sound">🔔</button>
+      <button class="btn primary" id="masterBtn" onclick="masterToggle()" style="--card-accent: var(--accent-stand);">▶ Start All</button>
+      <button class="btn" onclick="openAnalytics()" title="Analytics">📊</button>
       <button class="btn" onclick="openSettings()" title="Settings">⚙ Settings</button>
     </div>
+  </div>
+
+  <!-- IDLE BANNER -->
+  <div class="idle-banner" id="idleBanner">
+    <span>😴</span>
+    <span class="idle-banner-label">Away detected — timers paused</span>
+    <button class="btn" onclick="resumeFromIdle()" style="--card-accent: var(--accent-stand); margin-left: auto;">Resume</button>
   </div>
 
   <!-- FOCUS BANNER -->
@@ -605,6 +731,25 @@
       <div class="card-title">Wrist Stretches</div>
       <div class="card-desc">Quick guided stretch for IT hands. Takes ~90 seconds.</div>
 
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="wristRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="wristRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="wristCountdown">60:00</div>
+          <div class="timer-label" id="wristTimerStatus">Routine reminder</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button class="btn primary" id="wristTimerBtn" onclick="toggleTimer('wrist')">Start reminder</button>
+        <button class="btn" onclick="resetTimer('wrist')">Reset</button>
+      </div>
+
       <ul class="steps" id="wristSteps">
         <li class="current"><span class="step-num">01</span>Extend arm, pull fingers back gently — 15 sec</li>
         <li><span class="step-num">02</span>Flip hand down, press back — 15 sec</li>
@@ -627,6 +772,25 @@
       <div class="card-label">Neck & Upper Back</div>
       <div class="card-title">Neck Stretches</div>
       <div class="card-desc">Releases forward head posture. Do every 60–90 min at desk.</div>
+
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="neckRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="neckRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="neckCountdown">60:00</div>
+          <div class="timer-label" id="neckTimerStatus">Routine reminder</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button class="btn primary" id="neckTimerBtn" onclick="toggleTimer('neck')">Start reminder</button>
+        <button class="btn" onclick="resetTimer('neck')">Reset</button>
+      </div>
 
       <ul class="steps" id="neckSteps">
         <li class="current"><span class="step-num">01</span>Ear to shoulder, left side — 15 sec</li>
@@ -748,6 +912,25 @@
       <div class="card-title">Physiological Sigh</div>
       <div class="card-desc">Double inhale through nose, long slow exhale. 1-3 rounds. Fastest stress reset.</div>
 
+      <div class="timer-wrap">
+        <div class="ring-wrap">
+          <svg width="64" height="64" viewBox="0 0 64 64">
+            <circle class="ring-bg" cx="32" cy="32" r="28"/>
+            <circle class="ring-fill" id="breathRing" cx="32" cy="32" r="28"
+              stroke-dasharray="176" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-text" id="breathRingText">—</div>
+        </div>
+        <div class="timer-info">
+          <div class="timer-countdown" id="breathCountdown">90:00</div>
+          <div class="timer-label" id="breathTimerStatus">Routine reminder</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-bottom: 10px;">
+        <button class="btn primary" id="breathTimerBtn" onclick="toggleTimer('breath')">Start reminder</button>
+        <button class="btn" onclick="resetTimer('breath')">Reset</button>
+      </div>
+
       <div class="breath-visual">
         <div class="breath-circle" id="breathCircle">Ready</div>
       </div>
@@ -816,6 +999,40 @@
 </div>
 
 <!-- Settings Modal -->
+<!-- ANALYTICS MODAL -->
+<div class="modal-overlay" id="analyticsModal" onclick="closeAnalyticsOnOverlay(event)">
+  <div class="modal" style="max-width: 640px;">
+    <div class="modal-header">
+      <div class="modal-title">Weekly Analytics</div>
+      <button class="modal-close" onclick="closeAnalytics()">✕</button>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-section-title">Breaks completed</div>
+      <div class="chart-wrap" id="chartBreaks"></div>
+      <div class="chart-days" id="chartBreaksDays" style="display:flex;gap:6px;"></div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-section-title">Water glasses</div>
+      <div class="chart-wrap" id="chartWater"></div>
+      <div class="chart-days" id="chartWaterDays" style="display:flex;gap:6px;"></div>
+    </div>
+
+    <div class="analytics-section">
+      <div class="analytics-section-title">Focus sessions</div>
+      <div class="chart-wrap" id="chartFocus"></div>
+      <div class="chart-days" id="chartFocusDays" style="display:flex;gap:6px;"></div>
+    </div>
+
+    <div class="analytics-summary" id="analyticsSummary"></div>
+
+    <div class="btn-row" style="justify-content: flex-end; margin-top: 8px;">
+      <button class="btn primary" onclick="closeAnalytics()" style="--card-accent: var(--accent-focus);">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="settingsModal" onclick="closeSettingsOnOverlay(event)">
   <div class="modal">
     <div class="modal-header">
@@ -874,6 +1091,31 @@
     </div>
 
     <div class="setting-group">
+      <div class="setting-group-title">Routine Reminders</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Wrist stretches</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setWrist" value="60" min="30" max="120">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Neck stretches</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setNeck" value="60" min="30" max="120">
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Breathing exercise</div>
+          <div class="setting-hint">minutes between reminders</div>
+        </div>
+        <input type="number" class="setting-input" id="setBreath" value="90" min="30" max="180">
+      </div>
+    </div>
+
+    <div class="setting-group">
       <div class="setting-group-title">Hydration Goal</div>
       <div class="setting-row">
         <div>
@@ -881,6 +1123,24 @@
           <div class="setting-hint">glasses (8 oz each)</div>
         </div>
         <input type="number" class="setting-input" id="setWaterGoal" value="8" min="4" max="16">
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-group-title">Audio</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Completion chimes</div>
+          <div class="setting-hint">gentle tone when a timer fires</div>
+        </div>
+        <button class="btn sound-toggle" id="setSoundToggle" onclick="toggleSoundSetting()" style="min-width: 80px;">🔔 On</button>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Volume</div>
+          <div class="setting-hint">0 – 100</div>
+        </div>
+        <input type="range" id="setSoundVolume" min="0" max="100" value="60" style="width:100px; accent-color: var(--accent-focus);">
       </div>
     </div>
 
@@ -902,6 +1162,11 @@ let focusActive = false;
 let focusDuration = 25 * 60;
 let focusRemaining = 25 * 60;
 let focusInterval = null;
+let soundMuted = false;
+let soundVolume = 0.6;
+let deskStartTime = Date.now();
+let idlePaused = false;
+let idleTimeout = null;
 
 function loadState() {
   try {
@@ -922,7 +1187,9 @@ const DEFAULTS = {
   sitDuration: 25, standDuration: 20,
   eyesDuration: 20, shoulderDuration: 45,
   walkDuration: 90, hydrationDuration: 30,
-  waterGoal: 8
+  wristDuration: 60, neckDuration: 60, breathDuration: 90,
+  waterGoal: 8,
+  soundMuted: false, soundVolume: 60
 };
 
 function getSettings() {
@@ -938,7 +1205,14 @@ function openSettings() {
   document.getElementById('setShoulder').value = cfg.shoulderDuration;
   document.getElementById('setWalk').value = cfg.walkDuration;
   document.getElementById('setHydration').value = cfg.hydrationDuration;
+  document.getElementById('setWrist').value = cfg.wristDuration;
+  document.getElementById('setNeck').value = cfg.neckDuration;
+  document.getElementById('setBreath').value = cfg.breathDuration;
   document.getElementById('setWaterGoal').value = cfg.waterGoal;
+  document.getElementById('setSoundVolume').value = cfg.soundMuted ? 0 : cfg.soundVolume;
+  const stBtn = document.getElementById('setSoundToggle');
+  stBtn.textContent = cfg.soundMuted ? '🔕 Off' : '🔔 On';
+  stBtn.classList.toggle('muted', cfg.soundMuted);
   document.getElementById('settingsModal').classList.add('open');
 }
 
@@ -958,10 +1232,15 @@ function resetSettings() {
   document.getElementById('setShoulder').value = cfg.shoulderDuration;
   document.getElementById('setWalk').value = cfg.walkDuration;
   document.getElementById('setHydration').value = cfg.hydrationDuration;
+  document.getElementById('setWrist').value = cfg.wristDuration;
+  document.getElementById('setNeck').value = cfg.neckDuration;
+  document.getElementById('setBreath').value = cfg.breathDuration;
   document.getElementById('setWaterGoal').value = cfg.waterGoal;
 }
 
 function applySettings() {
+  const newMuted = document.getElementById('setSoundToggle').classList.contains('muted');
+  const newVolume = parseInt(document.getElementById('setSoundVolume').value) || 60;
   const cfg = {
     sitDuration:       Math.max(5,  Math.min(120, parseInt(document.getElementById('setSit').value) || 25)),
     standDuration:     Math.max(5,  Math.min(60,  parseInt(document.getElementById('setStand').value) || 20)),
@@ -969,15 +1248,26 @@ function applySettings() {
     shoulderDuration:  Math.max(10, Math.min(120, parseInt(document.getElementById('setShoulder').value) || 45)),
     walkDuration:      Math.max(30, Math.min(240, parseInt(document.getElementById('setWalk').value) || 90)),
     hydrationDuration: Math.max(15, Math.min(90,  parseInt(document.getElementById('setHydration').value) || 30)),
+    wristDuration:     Math.max(30, Math.min(120, parseInt(document.getElementById('setWrist').value) || 60)),
+    neckDuration:      Math.max(30, Math.min(120, parseInt(document.getElementById('setNeck').value) || 60)),
+    breathDuration:    Math.max(30, Math.min(180, parseInt(document.getElementById('setBreath').value) || 90)),
     waterGoal:         Math.max(4,  Math.min(16,  parseInt(document.getElementById('setWaterGoal').value) || 8)),
+    soundMuted: newMuted,
+    soundVolume: newVolume,
   };
   saveState({ settings: cfg });
+  soundMuted = newMuted;
+  soundVolume = newVolume / 100;
+  syncSoundBtn();
 
   // Apply to active timers
   timers.eyes.duration = cfg.eyesDuration * 60;
   timers.shoulder.duration = cfg.shoulderDuration * 60;
   timers.walk.duration = cfg.walkDuration * 60;
   timers.hydration.duration = cfg.hydrationDuration * 60;
+  timers.wrist.duration = cfg.wristDuration * 60;
+  timers.neck.duration = cfg.neckDuration * 60;
+  timers.breath.duration = cfg.breathDuration * 60;
   SS.durations.sit = cfg.sitDuration * 60;
   SS.durations.stand = cfg.standDuration * 60;
 
@@ -990,7 +1280,7 @@ function applySettings() {
   renderWaterGlasses();
 
   // Reset timers that aren't running to reflect new durations
-  ['eyes', 'shoulder', 'walk', 'hydration'].forEach(k => {
+  ['eyes', 'shoulder', 'walk', 'hydration', 'wrist', 'neck', 'breath'].forEach(k => {
     const t = timers[k];
     if (!t.running) {
       t.remaining = t.duration;
@@ -1021,16 +1311,31 @@ updateClock();
 
 function loadDailyStats() {
   const s = loadState();
-  if (s.statsDate !== TODAY) {
-    // New day — reset daily counters
-    saveState({ statsDate: TODAY, dailyBreaks: 0, dailyFocus: 0, dailyWater: 0 });
+  if (s.statsDate && s.statsDate !== TODAY) {
+    // New day — archive yesterday's totals before resetting
+    const history = s.history || {};
+    history[s.statsDate] = {
+      breaks: s.dailyBreaks || 0,
+      water:  s.dailyWater  || 0,
+      focus:  s.dailyFocus  || 0,
+    };
+    // Keep only last 30 days
+    const keys = Object.keys(history).sort();
+    while (keys.length > 30) { delete history[keys.shift()]; }
+    saveState({ history, statsDate: TODAY, dailyBreaks: 0, dailyFocus: 0, dailyWater: 0 });
     dailyBreaks = 0; dailyFocus = 0;
     waterCount = 0;
   } else {
     dailyBreaks = s.dailyBreaks || 0;
     dailyFocus  = s.dailyFocus  || 0;
     waterCount  = s.dailyWater  || 0;
+    if (!s.statsDate) saveState({ statsDate: TODAY });
   }
+  // Load sound prefs
+  const cfg = getSettings();
+  soundMuted = cfg.soundMuted;
+  soundVolume = cfg.soundVolume / 100;
+  syncSoundBtn();
   updateStatsBar();
 }
 
@@ -1139,7 +1444,26 @@ const timers = {
   hydration:  { duration: 30*60, remaining: 30*60, interval: null, running: false,
                 ringId: 'hydrationRing', ringTextId: 'hydrationRingText',
                 countdownId: 'hydrationCountdown', statusId: 'hydrationStatus', btnId: 'hydrationStartBtn',
-                alertTitle: '💧 Drink Water!', alertBody: "Stay hydrated — your brain is 75% water." },
+                alertTitle: '💧 Drink Water!', alertBody: "Stay hydrated — your brain is 75% water.",
+                isReminder: true, defaultStatus: 'Drink reminder' },
+  wrist:      { duration: 60*60, remaining: 60*60, interval: null, running: false,
+                ringId: 'wristRing', ringTextId: 'wristRingText',
+                countdownId: 'wristCountdown', statusId: 'wristTimerStatus', btnId: 'wristTimerBtn',
+                alertTitle: '🤲 Wrist Stretch Time!', alertBody: 'Quick 90-second routine for your wrists and hands.',
+                isReminder: true, defaultStatus: 'Routine reminder',
+                completedStatus: 'Do the routine below ↓' },
+  neck:       { duration: 60*60, remaining: 60*60, interval: null, running: false,
+                ringId: 'neckRing', ringTextId: 'neckRingText',
+                countdownId: 'neckCountdown', statusId: 'neckTimerStatus', btnId: 'neckTimerBtn',
+                alertTitle: '🧘 Neck Stretch Time!', alertBody: 'Relieve forward head posture. Takes ~90 seconds.',
+                isReminder: true, defaultStatus: 'Routine reminder',
+                completedStatus: 'Do the routine below ↓' },
+  breath:     { duration: 90*60, remaining: 90*60, interval: null, running: false,
+                ringId: 'breathRing', ringTextId: 'breathRingText',
+                countdownId: 'breathCountdown', statusId: 'breathTimerStatus', btnId: 'breathTimerBtn',
+                alertTitle: '🫁 Breathing Break', alertBody: 'Take 3 physiological sighs to reset stress now.',
+                isReminder: true, defaultStatus: 'Routine reminder',
+                completedStatus: 'Do the exercise below ↓' },
 };
 
 function fmt(s) {
@@ -1156,42 +1480,83 @@ function updateRing(t, remaining, duration) {
   document.getElementById(t.ringTextId).textContent = mins < 60 ? mins+'m' : '—';
 }
 
+// ===== MASTER START / PAUSE =====
+const MASTER_KEYS = ['eyes', 'shoulder', 'walk', 'hydration', 'wrist', 'neck', 'breath'];
+
+function allRunning() {
+  return SS.running && MASTER_KEYS.every(k => timers[k].running);
+}
+
+function syncMasterBtn() {
+  const btn = document.getElementById('masterBtn');
+  if (allRunning()) {
+    btn.textContent = '⏸ Pause All';
+    btn.style.setProperty('--card-accent', 'var(--accent-shoulder)');
+  } else {
+    btn.textContent = '▶ Start All';
+    btn.style.setProperty('--card-accent', 'var(--accent-stand)');
+  }
+}
+
+function masterToggle() {
+  if (allRunning()) {
+    // Pause everything
+    if (SS.running) toggleSitstand();
+    MASTER_KEYS.forEach(k => { if (timers[k].running) toggleTimer(k); });
+  } else {
+    // Start anything not already running
+    if (!SS.running) toggleSitstand();
+    MASTER_KEYS.forEach(k => { if (!timers[k].running) toggleTimer(k); });
+  }
+  // syncMasterBtn is called inside toggleSitstand/toggleTimer, but call once more to be safe
+  syncMasterBtn();
+}
+
 function toggleTimer(key) {
   const t = timers[key];
   if (t.running) {
     clearInterval(t.interval); t.running = false;
-    document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Resume reminder' : 'Resume';
+    clearPreBreakWarning(key);
+    document.getElementById(t.btnId).textContent = t.isReminder ? 'Resume reminder' : 'Resume';
     document.getElementById(t.statusId).textContent = 'Paused';
   } else {
     t.running = true;
     document.getElementById(t.btnId).textContent = 'Pause';
     document.getElementById(t.statusId).textContent = 'Running';
+    schedulePreBreakWarning(key);
     t.interval = setInterval(() => {
       t.remaining--;
       document.getElementById(t.countdownId).textContent = fmt(t.remaining);
       updateRing(t, t.remaining, t.duration);
       if (t.remaining <= 0) {
         clearInterval(t.interval); t.running = false;
+        clearPreBreakWarning(key);
+        playChime('break');
         notify(t.alertTitle, t.alertBody);
+        if (t.onComplete) t.onComplete();
         incrementBreaks();
         document.getElementById(t.countdownId).textContent = fmt(t.duration);
-        document.getElementById(t.statusId).textContent = '✓ Done — restarting';
-        document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
+        document.getElementById(t.statusId).textContent = t.completedStatus || '✓ Done — restarting';
+        document.getElementById(t.btnId).textContent = t.isReminder ? 'Start reminder' : 'Start';
         t.remaining = t.duration;
         updateRing(t, t.remaining, t.duration);
+        syncMasterBtn();
       }
     }, 1000);
   }
+  syncMasterBtn();
 }
 
 function resetTimer(key) {
   const t = timers[key];
   clearInterval(t.interval); t.running = false;
+  clearPreBreakWarning(key);
   t.remaining = t.duration;
   document.getElementById(t.countdownId).textContent = fmt(t.duration);
-  document.getElementById(t.statusId).textContent = key === 'hydration' ? 'Drink reminder' : 'Ready to start';
-  document.getElementById(t.btnId).textContent = key === 'hydration' ? 'Start reminder' : 'Start';
+  document.getElementById(t.statusId).textContent = t.defaultStatus || 'Ready to start';
+  document.getElementById(t.btnId).textContent = t.isReminder ? 'Start reminder' : 'Start';
   updateRing(t, t.duration, t.duration);
+  syncMasterBtn();
 }
 
 function snoozeTimer(key, mins) {
@@ -1249,19 +1614,23 @@ function toggleSitstand() {
         clearInterval(SS.interval); SS.running = false;
         const next = SS.mode === 'sit' ? 'stand' : 'sit';
         const msg = next === 'stand' ? 'Time to stand up!' : 'Time to sit down.';
+        playChime('sitstand');
         notify('⏱ Position Change', msg);
         incrementBreaks();
         document.getElementById('sitstandStartBtn').textContent = 'Start';
         setMode(next);
+        syncMasterBtn();
       }
     }, 1000);
   }
+  syncMasterBtn();
 }
 
 function resetSitstand() {
   clearInterval(SS.interval); SS.running = false;
   setMode('sit');
   document.getElementById('sitstandStartBtn').textContent = 'Start';
+  syncMasterBtn();
 }
 
 // ===== WRIST ROUTINE =====
@@ -1281,8 +1650,9 @@ function runWristStep() {
     wristRunning = false;
     document.getElementById('wristStartBtn').textContent = 'Done ✓';
     document.getElementById('wristStartBtn').disabled = false;
-    showToast('Wrist routine complete ✓', 'Nice work. Repeat hourly.');
+    showToast('Wrist routine complete ✓', 'Nice work — reminder timer restarted.');
     incrementBreaks();
+    if (!timers.wrist.running) toggleTimer('wrist');
     return;
   }
   updateWristHighlight();
@@ -1330,8 +1700,9 @@ function runNeckStep() {
     neckRunning = false;
     document.getElementById('neckStartBtn').textContent = 'Done ✓';
     document.getElementById('neckStartBtn').disabled = false;
-    showToast('Neck routine complete ✓', 'Forward head posture relieved.');
+    showToast('Neck routine complete ✓', 'Forward head posture relieved — reminder timer restarted.');
     incrementBreaks();
+    if (!timers.neck.running) toggleTimer('neck');
     return;
   }
   updateNeckHighlight();
@@ -1496,8 +1867,9 @@ function startBreath() {
 function runBreathPhase() {
   if (breathRound >= 3) {
     stopBreath();
-    showToast('Sigh complete ✓', 'Nervous system reset. You got this.');
+    showToast('Sigh complete ✓', 'Nervous system reset. Reminder timer restarted.');
     incrementBreaks();
+    if (!timers.breath.running) toggleTimer('breath');
     return;
   }
   const phase = breathPhases[breathPhaseIdx];
@@ -1559,6 +1931,249 @@ function resetEod() {
   saveState({ eodChecked: eodChecked, eodDate: TODAY });
 }
 
+// ===== AUDIO CHIMES =====
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function playChime(type) {
+  if (soundMuted) return;
+  try {
+    const ctx = getAudioCtx();
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(soundVolume * 0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2);
+    gain.connect(ctx.destination);
+
+    const freqs = type === 'sitstand'
+      ? [523, 659, 784]   // C5-E5-G5 — bright chord
+      : [392, 523, 659];  // G4-C5-E5 — gentle chord
+
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+      osc.connect(gain);
+      osc.start(ctx.currentTime + i * 0.08);
+      osc.stop(ctx.currentTime + 1.2);
+    });
+  } catch (_) {}
+}
+
+function toggleSound() {
+  soundMuted = !soundMuted;
+  const cfg = getSettings();
+  cfg.soundMuted = soundMuted;
+  saveState({ settings: cfg });
+  syncSoundBtn();
+  if (!soundMuted) playChime('break'); // preview
+}
+
+function toggleSoundSetting() {
+  const btn = document.getElementById('setSoundToggle');
+  const isMuted = btn.classList.toggle('muted');
+  btn.textContent = isMuted ? '🔕 Off' : '🔔 On';
+}
+
+function syncSoundBtn() {
+  const btn = document.getElementById('soundToggleBtn');
+  if (!btn) return;
+  btn.textContent = soundMuted ? '🔕' : '🔔';
+  btn.classList.toggle('muted', soundMuted);
+  btn.title = soundMuted ? 'Sound off (click to enable)' : 'Sound on (click to mute)';
+}
+
+// ===== PRE-BREAK WARNING =====
+const preBreakTimers = {};  // key → timeoutId
+
+function schedulePreBreakWarning(key) {
+  clearPreBreakWarning(key);
+  const t = timers[key];
+  const warnAt = t.remaining - 60;  // 60s before
+  if (warnAt > 0) {
+    preBreakTimers[key] = setTimeout(() => {
+      if (timers[key].running) {
+        showToast('⏰ Upcoming break', `${t.alertTitle.replace(/[^a-zA-Z ]/g, '').trim()} in 1 minute`);
+      }
+    }, warnAt * 1000);
+  }
+}
+
+function clearPreBreakWarning(key) {
+  if (preBreakTimers[key]) {
+    clearTimeout(preBreakTimers[key]);
+    delete preBreakTimers[key];
+  }
+}
+
+// ===== SESSION TIME TRACKER =====
+function updateDeskTime() {
+  const elapsed = Math.floor((Date.now() - deskStartTime) / 1000);
+  const h = Math.floor(elapsed / 3600);
+  const m = Math.floor((elapsed % 3600) / 60);
+  document.getElementById('statDesk').textContent = `${h}h ${m}m`;
+}
+setInterval(updateDeskTime, 60000);
+updateDeskTime();
+
+// ===== IDLE / AWAY DETECTION =====
+const IDLE_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+let lastActivity = Date.now();
+let idleCheckInterval = null;
+
+function resetActivity() {
+  lastActivity = Date.now();
+  if (idlePaused) resumeFromIdle();
+}
+
+function resumeFromIdle() {
+  if (!idlePaused) return;
+  idlePaused = false;
+  document.getElementById('idleBanner').classList.remove('active');
+  // Re-start all timers that were running before idle
+  const wasRunning = JSON.parse(sessionStorage.getItem('idlePausedTimers') || '[]');
+  wasRunning.forEach(key => {
+    if (key === '__SS__') { if (!SS.running) toggleSitstand(); }
+    else if (timers[key] && !timers[key].running) toggleTimer(key);
+  });
+  sessionStorage.removeItem('idlePausedTimers');
+}
+
+['mousemove','keydown','mousedown','touchstart','scroll'].forEach(ev => {
+  document.addEventListener(ev, resetActivity, { passive: true });
+});
+
+idleCheckInterval = setInterval(() => {
+  if (Date.now() - lastActivity > IDLE_THRESHOLD && !idlePaused) {
+    // Detect idle: pause everything that is running
+    const paused = [];
+    if (SS.running) { toggleSitstand(); paused.push('__SS__'); }
+    MASTER_KEYS.forEach(k => { if (timers[k].running) { toggleTimer(k); paused.push(k); } });
+    if (paused.length > 0) {
+      idlePaused = true;
+      sessionStorage.setItem('idlePausedTimers', JSON.stringify(paused));
+      document.getElementById('idleBanner').classList.add('active');
+    }
+  }
+}, 30000); // check every 30s
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', e => {
+  // Space = master toggle (when not typing in an input)
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    masterToggle();
+  }
+  // Escape = close open modal
+  if (e.code === 'Escape') {
+    closeSettings();
+    closeAnalytics();
+  }
+});
+
+// ===== ANALYTICS =====
+function openAnalytics() {
+  renderAnalytics();
+  document.getElementById('analyticsModal').classList.add('open');
+}
+
+function closeAnalytics() {
+  document.getElementById('analyticsModal').classList.remove('open');
+}
+
+function closeAnalyticsOnOverlay(e) {
+  if (e.target === document.getElementById('analyticsModal')) closeAnalytics();
+}
+
+function getLast7Days() {
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  return days;
+}
+
+function renderAnalytics() {
+  const s = loadState();
+  const history = s.history || {};
+  const days = getLast7Days();
+
+  // Include today's live data
+  const todayData = { breaks: dailyBreaks, water: waterCount, focus: dailyFocus };
+
+  const breaksData  = days.map(d => d === TODAY ? todayData.breaks : (history[d] ? history[d].breaks : 0));
+  const waterData   = days.map(d => d === TODAY ? todayData.water  : (history[d] ? history[d].water  : 0));
+  const focusData   = days.map(d => d === TODAY ? todayData.focus  : (history[d] ? history[d].focus  : 0));
+
+  const labels = days.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-US', { weekday: 'short' });
+  });
+
+  buildChart('chartBreaks', 'chartBreaksDays', breaksData, labels, 'var(--accent-eyes)', days);
+  buildChart('chartWater',  'chartWaterDays',  waterData,  labels, 'var(--accent-hydration)', days);
+  buildChart('chartFocus',  'chartFocusDays',  focusData,  labels, 'var(--accent-focus)', days);
+
+  // Summary stats (7-day totals)
+  const totalBreaks = breaksData.reduce((a, b) => a + b, 0);
+  const totalWater  = waterData.reduce((a, b) => a + b, 0);
+  const totalFocus  = focusData.reduce((a, b) => a + b, 0);
+  const avgBreaks   = (totalBreaks / 7).toFixed(1);
+  const avgWater    = (totalWater  / 7).toFixed(1);
+
+  document.getElementById('analyticsSummary').innerHTML = `
+    <div class="analytics-stat"><div class="analytics-stat-val">${totalBreaks}</div><div class="analytics-stat-label">Breaks (7d)</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-val">${avgBreaks}</div><div class="analytics-stat-label">Avg breaks/day</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-val">${totalWater}</div><div class="analytics-stat-label">Glasses (7d)</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-val">${avgWater}</div><div class="analytics-stat-label">Avg glasses/day</div></div>
+    <div class="analytics-stat"><div class="analytics-stat-val">${totalFocus}</div><div class="analytics-stat-label">Focus sessions (7d)</div></div>
+  `;
+}
+
+function buildChart(barContainerId, daysContainerId, data, labels, color, days) {
+  const maxVal = Math.max(...data, 1);
+  const barWrap = document.getElementById(barContainerId);
+  const dayWrap = document.getElementById(daysContainerId);
+
+  barWrap.innerHTML = '';
+  dayWrap.innerHTML = '';
+
+  data.forEach((val, i) => {
+    const isToday = days[i] === TODAY;
+    const pct = (val / maxVal) * 100;
+
+    const col = document.createElement('div');
+    col.className = 'chart-col' + (isToday ? ' chart-today' : '');
+
+    const valEl = document.createElement('div');
+    valEl.className = 'chart-val';
+    valEl.textContent = val;
+
+    const barWrapEl = document.createElement('div');
+    barWrapEl.className = 'chart-bar-wrap';
+    barWrapEl.style.cssText = 'flex:1; display:flex; align-items:flex-end; width:100%;';
+
+    const bar = document.createElement('div');
+    bar.className = 'chart-bar';
+    bar.style.cssText = `height:${pct}%; background:${color}; width:100%; opacity:${isToday ? '1' : '0.55'};`;
+
+    barWrapEl.appendChild(bar);
+    col.appendChild(valEl);
+    col.appendChild(barWrapEl);
+    barWrap.appendChild(col);
+
+    const dayEl = document.createElement('div');
+    dayEl.className = 'chart-label' + (isToday ? ' chart-today' : '');
+    dayEl.style.cssText = `flex:1; text-align:center; font-size:0.6rem; color:${isToday ? 'var(--text)' : 'var(--muted)'};`;
+    dayEl.textContent = labels[i];
+    dayWrap.appendChild(dayEl);
+  });
+}
+
 // ===== INIT =====
 Object.keys(timers).forEach(k => updateRing(timers[k], timers[k].duration, timers[k].duration));
 updateSSRing();
@@ -1571,6 +2186,9 @@ updateFocusRing();
   timers.shoulder.duration = timers.shoulder.remaining = cfg.shoulderDuration * 60;
   timers.walk.duration = timers.walk.remaining = cfg.walkDuration * 60;
   timers.hydration.duration = timers.hydration.remaining = cfg.hydrationDuration * 60;
+  timers.wrist.duration = timers.wrist.remaining = cfg.wristDuration * 60;
+  timers.neck.duration = timers.neck.remaining = cfg.neckDuration * 60;
+  timers.breath.duration = timers.breath.remaining = cfg.breathDuration * 60;
   SS.durations.sit = cfg.sitDuration * 60;
   SS.durations.stand = cfg.standDuration * 60;
   SS.remaining = SS.durations.sit;
@@ -1591,6 +2209,7 @@ loadDailyStats();
 loadStreak();
 loadEodState();
 renderWaterGlasses();
+syncMasterBtn();
 </script>
 </body>
 </html>
